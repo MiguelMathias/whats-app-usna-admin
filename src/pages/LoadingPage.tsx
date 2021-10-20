@@ -1,8 +1,11 @@
-import { IonContent, IonHeader, IonPage, IonSpinner, IonTitle, IonToolbar } from '@ionic/react'
+import { IonButton, IonContent, IonHeader, IonMenuButton, IonPage, IonSpinner, IonTitle, IonToolbar } from '@ionic/react'
 
 const LoadingPage: React.FC = () => (
 	<IonPage>
 		<IonHeader>
+			<IonButton slot='start'>
+				<IonMenuButton />
+			</IonButton>
 			<IonToolbar>
 				<IonTitle>Loading...</IonTitle>
 			</IonToolbar>
