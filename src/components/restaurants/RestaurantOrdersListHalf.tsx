@@ -1,0 +1,89 @@
+import { IonDatetime, IonItem, IonItemDivider, IonLabel, IonList, IonSelect, IonSelectOption } from '@ionic/react'
+import { addDays } from 'date-fns'
+import { RestaurantOrderModel } from '../../data/restaurants/Restaurant'
+import { formatDateDefault } from '../../util/misc'
+
+type RestaurantOrdersListHalfProps = {
+	selectedOrderIndex: number
+	setSelectedOrderIndex: (selectedOrderIndex: number) => void
+	filteredOrders: RestaurantOrderModel[]
+	selectedStatuses: string[]
+	setSelectedStatuses: (selectedStatuses: string[]) => void
+	fromDate: string
+	setFromDate: (fromDate: string) => void
+	toDate: string
+	setToDate: (toDate: string) => void
+}
+
+const RestaurantOrdersListHalf: React.FC<RestaurantOrdersListHalfProps> = ({
+	filteredOrders,
+	selectedOrderIndex,
+	setSelectedOrderIndex,
+	selectedStatuses,
+	setSelectedStatuses,
+	fromDate,
+	setFromDate,
+	toDate,
+	setToDate,
+}) => {
+	return (
+		<div className='ordersList'>
+			<IonList style={{ height: '100%' }}>
+				<IonItem>
+					<IonLabel>Order Status</IonLabel>
+					<IonSelect
+						slot='end'
+						value={selectedStatuses}
+						multiple
+						placeholder='Select Orders'
+						onIonChange={(e) => {
+							setSelectedStatuses(e.detail.value)
+							setSelectedOrderIndex(-1)
+						}}
+					>
+						<IonSelectOption value='submitted' disabled>
+							Submitted
+						</IonSelectOption>
+						<IonSelectOption value='accepted'>Accepted</IonSelectOption>
+						<IonSelectOption value='rejected'>Rejected</IonSelectOption>
+						<IonSelectOption value='fulfilled'>Fulfilled</IonSelectOption>
+					</IonSelect>
+				</IonItem>
+				<IonItem>
+					<IonLabel>From Date</IonLabel>
+					<IonDatetime
+						value={fromDate}
+						onIonChange={(e) => setFromDate(e.detail.value ?? '')}
+						max={addDays(new Date(toDate), -1).toISOString()}
+					/>
+				</IonItem>
+				<IonItem>
+					<IonLabel>To Date</IonLabel>
+					<IonDatetime
+						value={toDate}
+						onIonChange={(e) => setToDate(e.detail.value ?? '')}
+						max={new Date().toISOString()}
+					/>
+				</IonItem>
+				<IonItemDivider>Orders</IonItemDivider>
+				{filteredOrders.map((order, i) => (
+					<IonItem
+						key={i}
+						detail
+						button
+						onClick={() => {
+							selectedOrderIndex !== i ? setSelectedOrderIndex(i) : setSelectedOrderIndex(-1)
+						}}
+						className={selectedOrderIndex === i ? 'selected in' : 'in'}
+					>
+						<IonLabel>
+							{order.displayName} - {formatDateDefault(order.submitted?.toDate())}
+						</IonLabel>
+					</IonItem>
+				))}
+			</IonList>
+		</div>
+	)
+}
+
+export default RestaurantOrdersListHalf

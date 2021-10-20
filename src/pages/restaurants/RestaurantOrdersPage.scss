@@ -1,0 +1,50 @@
+@media (min-aspect-ratio: 1/1) {
+	.ordersList {
+		height: 100%;
+		width: 40%;
+		position: absolute;
+		top: 0;
+		left: 0;
+
+		ion-item.in {
+			border-radius: 0 50px 50px 0;
+		}
+
+		ion-item.selected {
+			border-radius: 0 50px 50px 0;
+			--background: rgba(var(--ion-color-primary-rgb), 0.14);
+			color: var(--ion-color-primary);
+		}
+	}
+
+	.ordersView {
+		height: 100%;
+		width: 60%;
+		position: absolute;
+		top: 0;
+		right: 0;
+	}
+}
+
+@media (max-aspect-ratio: 1/1) {
+	.ordersList {
+		height: 40%;
+		width: 100%;
+		position: absolute;
+		left: 0;
+		top: 0;
+
+		ion-item.selected {
+			--background: rgba(var(--ion-color-primary-rgb), 0.14);
+			color: var(--ion-color-primary);
+		}
+	}
+
+	.ordersView {
+		height: 60%;
+		width: 100%;
+		position: absolute;
+		left: 0;
+		bottom: 0;
+	}
+}
