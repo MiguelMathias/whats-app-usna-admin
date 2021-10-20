@@ -18,7 +18,7 @@ import {
 } from '@ionic/react'
 import { checkmarkOutline } from 'ionicons/icons'
 import { useState } from 'react'
-import { RestaurantOrderModel } from '../../data/restaurants/Restaurant'
+import { orderTotalPrice, restaurantBagItemPrice, RestaurantOrderModel } from '../../data/restaurants/Restaurant'
 import { firestore } from '../../Firebase'
 import { formatDateDefault } from '../../util/misc'
 import AccordionIonItem from '../AccordionIonItem'
@@ -39,7 +39,7 @@ const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ s
 				<IonPage>
 					<IonHeader>
 						<IonToolbar>
-							<IonTitle slot='start'>Order</IonTitle>
+							<IonTitle slot='start'>Order: ${orderTotalPrice(order)}</IonTitle>
 							<IonButtons slot='end'>
 								<IonButton
 									onClick={async () => {
@@ -126,21 +126,45 @@ const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ s
 								</IonItem>
 							)}
 							<IonItemDivider>Items</IonItemDivider>
-							{order.restaurantBagItems.map((order, i) => (
-								<AccordionIonItem key={i} initiallyOpen header={order.restaurantItem.name}>
+							{order.restaurantBagItems.map((restaurantBagItem, i) => (
+								<AccordionIonItem
+									key={i}
+									initiallyOpen
+									header={`${restaurantBagItem.restaurantItem.name}: $${restaurantBagItemPrice(
+										restaurantBagItem
+									)}`}
+								>
 									<IonList>
 										<IonItem>
-											<b>Selected Ingredients:</b>
+											<b>Ingredients:</b>
 											<div slot='end' style={{ textAlign: 'right' }}>
-												{order.restaurantItem.ingredients.map((ingredient, i) => (
-													<p key={i}>{ingredient.name}</p>
+												{restaurantBagItem.restaurantItem.ingredients.map((ingredient, i) => (
+													<p key={i}>
+														{ingredient.name}
+														{ingredient.price && ` (+$${ingredient.price})`}
+													</p>
 												))}
 											</div>
 										</IonItem>
-										{order.note && (
+										<IonItem>
+											<b>Options:</b>
+											<div slot='end' style={{ textAlign: 'right' }}>
+												{restaurantBagItem.restaurantItem.options
+													.filter((option) => option.selected >= 0)
+													.map((option, i) => (
+														<p key={i}>
+															<ins>{option.name}:</ins>{' '}
+															{option.selectable[option.selected].name}
+															{option.selectable[option.selected].price &&
+																` (+$${option.selectable[option.selected].price})`}
+														</p>
+													))}
+											</div>
+										</IonItem>
+										{restaurantBagItem.note && (
 											<IonItem>
 												<b>Note:</b>
-												<p slot='end'>{order.note}</p>
+												<p slot='end'>{restaurantBagItem.note}</p>
 											</IonItem>
 										)}
 									</IonList>
