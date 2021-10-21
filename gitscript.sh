@@ -4,4 +4,7 @@ then
 elif [ "$1" == 'pull' ]
 then
     git pull origin
+elif [ "$1" == 'host' ]
+then
+    ionic build --prod && firebase deploy --only hosting
 fi
