@@ -8,3 +8,10 @@ element?.addEventListener('touchstart', (e: any) => {
 	// prevent swipe to navigate gesture
 	e.preventDefault()
 })
+
+if ((window as any).safari) {
+	history.pushState(null, null as any, location.href)
+	window.onpopstate = () => {
+		history.go(1)
+	}
+}

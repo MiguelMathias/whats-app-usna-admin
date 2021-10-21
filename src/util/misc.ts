@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 
 export type MapStringType<V> = { [key: string]: V }
 
-export const capitalize = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : undefined)
+export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 export const distinct = (value: any, index: any, self: string | any[]) => self.indexOf(value) === index
 

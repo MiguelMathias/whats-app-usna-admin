@@ -210,8 +210,11 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 											setRestaurantItem({ ...restaurantItem })
 											return
 										}
-										const indexOfSelect = restaurantItem.ingredients.indexOfValue(ingredient)
-										restaurantItem.ingredients[indexOfSelect] = newIngredient
+										if (!e.detail.value) {
+											setRestaurantItem({ ...restaurantItem, ingredients: restaurantItem.ingredients.removeIndex(i) })
+											return
+										}
+										restaurantItem.ingredients[i] = newIngredient
 										setRestaurantItem({ ...restaurantItem })
 									}}
 								/>
@@ -269,6 +272,11 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 												setRestaurantItem({ ...restaurantItem, options: restaurantItem.options.concat(newOption) })
 												return
 											}
+											if (!e.detail.value) {
+												restaurantItem.options = restaurantItem.options.removeIndex(i)
+												setRestaurantItem({ ...restaurantItem })
+												return
+											}
 											restaurantItem.options[i] = newOption
 											setRestaurantItem({ ...restaurantItem })
 										}}
@@ -307,6 +315,11 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 																const newSelect = { ...select, name: e.detail.value ?? '' }
 																if (isNewSelect) {
 																	option.selectable = option.selectable.concat(newSelect)
+																	setRestaurantItem({ ...restaurantItem })
+																	return
+																}
+																if (!e.detail.value) {
+																	option.selectable = option.selectable.removeIndex(j)
 																	setRestaurantItem({ ...restaurantItem })
 																	return
 																}

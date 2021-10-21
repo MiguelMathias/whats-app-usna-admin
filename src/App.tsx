@@ -1,4 +1,4 @@
-import { IonApp, IonRouterOutlet, IonSplitPane, IonToast } from '@ionic/react'
+import { IonApp, IonRouterOutlet, IonSplitPane, useIonToast } from '@ionic/react'
 import { IonReactRouter } from '@ionic/react-router'
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css'
@@ -20,10 +20,11 @@ import { Redirect, Route } from 'react-router-dom'
 import { useEffectOnce } from 'react-use'
 import { AppContext, AppContextType } from './AppContext'
 import SideMenu from './components/SideMenu'
-import { isAdmin, UserDataModel } from './data/account/User'
+import { AdminsModel, isAdmin, UserDataModel } from './data/account/User'
 import { RestaurantModel } from './data/restaurants/Restaurant'
 import { auth, firestore } from './Firebase'
 import Account from './pages/account/Account'
+import ManageAdminsPage from './pages/account/ManageAdminsPage'
 import MFSDAdminPage from './pages/mfsd/MFSDAdminPage'
 import MWFAdminPage from './pages/mwf/MWFAdminPage'
 import NABSDAdminPage from './pages/nabsd/NABSDAdminPage'
@@ -38,31 +39,19 @@ import './theme/variables.css'
 const App: React.FC = () => {
 	const [user, setUser] = useState<User | undefined>(undefined)
 	const [userData, setUserData] = useState<UserDataModel | undefined>(undefined)
-	const [showToastNotif, setShowToastNotif] = useState(false)
-	const [toastHeader, setToastHeader] = useState<string | undefined>('')
-	const [toastMessage, setToastMessage] = useState<string | undefined>('')
-	const [toastDuration, setToastDuration] = useState(2500)
 	const [restaurants, setRestaurants] = useState<RestaurantModel[]>([])
+	const [admins, setAdmins] = useState({ all: [], depts: {} } as AdminsModel)
+	const [showBadAccountToast, _] = useIonToast()
 
-	const filteredRestaurants = () => restaurants.filter((restaurant) => isAdmin(userData, restaurant.uid))
-
-	const fireToastNotif = (header?: string, text?: string, duration?: number) => {
-		setToastMessage(text)
-		setToastHeader(header)
-		setToastDuration(duration ?? 2500)
-		setShowToastNotif(true)
-	}
+	const filteredRestaurants = () => restaurants.filter((restaurant) => isAdmin(admins, userData, restaurant.uid))
 
 	const appContextProviderValue = {
 		user,
 		setUser,
 		userData,
 		setUserData,
-		showToastNotif,
-		setShowToastNotif,
-		toastDuration,
-		setToastDuration,
-		fireToastNotif,
+		admins,
+		setAdmins,
 	} as AppContextType
 
 	useEffect(() => {
@@ -86,18 +75,18 @@ const App: React.FC = () => {
 	}, [user?.uid])
 
 	onAuthStateChanged(auth, (user) => {
-		if (/[a-zA-Z0-9]*@usna\.edu/.test(user?.email ?? '') /* /m[1-9]{6}@usna\.edu/.test(user?.email ?? '') */)
-			setUser(user ?? undefined)
+		if (/[a-zA-Z0-9]*@usna\.edu/.test(user?.email ?? '') /* /m[1-9]{6}@usna\.edu/.test(user?.email ?? '') */) setUser(user ?? undefined)
 		else if (user) {
-			fireToastNotif('Wrong Account!', 'Must sign in with USNA (@usna.edu) Google account')
+			showBadAccountToast({ header: 'Wrong Account!', message: 'Must sign in with USNA (@usna.edu) Google account', color: 'warning', duration: 2000 })
 			signOut(auth)
 		} else setUser(undefined)
 	})
 
 	useEffectOnce(() => {
-		onSnapshot(collection(firestore, 'restaurants'), (snapshot) =>
-			setRestaurants(snapshot.docs.map((doc) => doc.data() as RestaurantModel))
-		)
+		onSnapshot(collection(firestore, 'restaurants'), (snapshot) => setRestaurants(snapshot.docs.map((doc) => doc.data() as RestaurantModel)))
+		onSnapshot(doc(firestore, 'admin', 'admins'), (snapshot) => {
+			setAdmins(snapshot.data() as AdminsModel)
+		})
 	})
 
 	return (
@@ -125,29 +114,23 @@ const App: React.FC = () => {
 							<Route exact path='/account'>
 								<Account />
 							</Route>
+							<Route exact path='/manage-admins'>
+								{isAdmin(admins, userData) ? <ManageAdminsPage restaurants={restaurants} /> : <></>}
+							</Route>
 							<Route exact path='/mfsd'>
-								{isAdmin(userData, 'mfsd') ? <MFSDAdminPage /> : <></>}
+								{isAdmin(admins, userData, 'mfsd') ? <MFSDAdminPage /> : <></>}
 							</Route>
 							<Route exact path='/mwf'>
-								{isAdmin(userData, 'mwf') ? <MWFAdminPage /> : <></>}
+								{isAdmin(admins, userData, 'mwf') ? <MWFAdminPage /> : <></>}
 							</Route>
 							<Route exact path='/nabsd'>
-								{isAdmin(userData, 'nabsd') ? <NABSDAdminPage /> : <></>}
+								{isAdmin(admins, userData, 'nabsd') ? <NABSDAdminPage /> : <></>}
 							</Route>
 							<Route exact path='/'>
 								<Redirect to='/account' />
 							</Route>
 						</IonRouterOutlet>
 					</IonSplitPane>
-					<IonToast
-						isOpen={showToastNotif}
-						position='top'
-						duration={toastDuration}
-						header={toastHeader}
-						message={toastMessage}
-						onDidDismiss={() => setShowToastNotif(false)}
-						translucent
-					/>
 				</IonReactRouter>
 			</IonApp>
 		</AppContext.Provider>
