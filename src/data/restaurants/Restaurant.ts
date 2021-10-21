@@ -9,6 +9,12 @@ export type RestaurantModel = {
 	description: string
 	active: boolean
 	manuallyClosed: boolean
+	locations: RestaurantLocationModel[]
+}
+
+export type RestaurantLocationModel = {
+	uid: string
+	name: string
 }
 
 export type RestaurantItemModel = {
@@ -26,9 +32,11 @@ export type RestaurantItemModel = {
 
 export type RestaurantItemOptionModel = {
 	name: string
-	selectable: { name: string; price: number }[]
+	selectable: RestaurantItemOptionSelectableModel[]
 	selected: number
 }
+
+export type RestaurantItemOptionSelectableModel = { name: string; price: number }
 
 export type RestaurantItemIngredientModel = {
 	name: string
@@ -45,11 +53,13 @@ export type RestaurantOrderModel = {
 	displayName: string
 	userUid: string
 	restaurantUid: string
+	restaurantLocation?: string
 	restaurantBagItems: RestaurantBagItemModel[]
 	scheduledPickup?: Timestamp
 	submitted?: Timestamp
 	accepted?: Timestamp
 	rejected?: Timestamp
+	pickupReady?: Timestamp
 	fulfilled?: Timestamp
 	uid: string
 }
