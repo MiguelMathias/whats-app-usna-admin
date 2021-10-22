@@ -51,6 +51,7 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 					price: 5,
 					restaurantUid: restaurant?.uid,
 					uid: '',
+					locationUids: restaurant?.locations.map((location) => location.uid),
 			  } as RestaurantItemModel)
 			: decodeB64Url<RestaurantItemModel>(restaurantItemB64)
 	)
@@ -79,33 +80,28 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 									options: restaurantItem.options.filter((opt) => !!opt.name),
 								})
 								if (addOrEdit === 'edit') {
-									const oldItem = decodeB64Url<RestaurantItemModel>(restaurantItemB64)
 									//Update restaurant item of old item name
 									const restaurantItemToUpdate = doc(firestore, 'restaurants', restaurant.uid, 'items', restaurantItem.uid)
-									//Update all favorite items of old item name
-									const favoriteItemsToUpdate = (
-										await getDocs(query(collectionGroup(firestore, 'favorites'), where('uid', '==', oldItem.uid)))
+									//Update all favorite items of old item
+									const favoriteItemsToDelete = (
+										await getDocs(query(collectionGroup(firestore, 'favorites'), where('restaurantItem.uid', '==', restaurantItem.uid)))
 									).docs
 									//Remove all user bag items of old item name
 									const bagItemsToDelete = (
-										await getDocs(query(collectionGroup(firestore, 'bag'), where('restaurantItem.uid', '==', oldItem.uid)))
+										await getDocs(query(collectionGroup(firestore, 'bag'), where('restaurantItem.uid', '==', restaurantItem.uid)))
 									).docs
-									//Update restaurantItems + favoriteItems
-									await Promise.all(
-										favoriteItemsToUpdate
-											.map((doc) => doc.ref)
-											.concat(restaurantItemToUpdate)
-											.map((docRef) => setDoc(docRef, restaurantItem))
-									)
-									console.log('Updated restaurant item of name ' + oldItem.name, restaurantItemToUpdate)
+									//Update restaurantItems
+									await setDoc(restaurantItemToUpdate, restaurantItem)
+									console.log('Updated restaurant item of name ' + restaurantItem.name, restaurantItemToUpdate)
+
+									//Delete the user bag and favorite items
+									await Promise.all(bagItemsToDelete.concat(favoriteItemsToDelete).map((doc) => deleteDoc(doc.ref)))
 									console.log(
-										'Updated favorite items of name ' + oldItem.name,
-										favoriteItemsToUpdate.map((doc) => doc.data())
+										'Deleted favorite items of name ' + restaurantItem.name,
+										favoriteItemsToDelete.map((doc) => doc.data())
 									)
-									//Delete the user bag items
-									await Promise.all(bagItemsToDelete.map((doc) => deleteDoc(doc.ref)))
 									console.log(
-										'Deleted bag items of name ' + oldItem.name,
+										'Deleted bag items of name ' + restaurantItem.name,
 										bagItemsToDelete.map((doc) => doc.data())
 									)
 								} else {
@@ -181,6 +177,30 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 							}}
 						/>
 					</IonItem>
+					{restaurant.locations.length > 0 && (
+						<>
+							<IonItemDivider>Locations</IonItemDivider>
+							{restaurant.locations.map((location, i) => {
+								return (
+									<IonItem key={i}>
+										<IonCheckbox
+											slot='start'
+											checked={restaurantItem.locationUids.includes(location.uid)}
+											onClick={() =>
+												setRestaurantItem({
+													...restaurantItem,
+													locationUids: restaurantItem.locationUids.includes(location.uid)
+														? restaurantItem.locationUids.filter((locationUid) => locationUid !== location.uid)
+														: restaurantItem.locationUids.concat(location.uid),
+												})
+											}
+										/>
+										<IonLabel>{location.name}</IonLabel>
+									</IonItem>
+								)
+							})}
+						</>
+					)}
 					<IonItemDivider>Ingredients:</IonItemDivider>
 					{restaurantItem.ingredients.concat({ name: '' } as RestaurantItemIngredientModel).map((ingredient, i) => {
 						const isNewIngredient = i === restaurantItem.ingredients.length
@@ -188,6 +208,7 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 							<IonItem key={i}>
 								{!isNewIngredient && (
 									<IonCheckbox
+										slot='start'
 										checked={restaurantItem.selectedIngredients.includes(i)}
 										onClick={() =>
 											setRestaurantItem({

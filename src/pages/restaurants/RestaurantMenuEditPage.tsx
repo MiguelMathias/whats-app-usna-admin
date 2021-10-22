@@ -85,7 +85,10 @@ const RestaurantMenuEditPage: React.FC<RestaurantMenuEditPageProps> = ({ restaur
 														const favoriteItemsToDelete = await Promise.all(
 															(
 																await getDocs(
-																	query(collectionGroup(firestore, 'favorites'), where('uid', '==', restaurantItem.uid))
+																	query(
+																		collectionGroup(firestore, 'favorites'),
+																		where('restaurantItem.uid', '==', restaurantItem.uid)
+																	)
 																)
 															).docs
 														)

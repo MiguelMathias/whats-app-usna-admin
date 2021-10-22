@@ -28,6 +28,7 @@ export type RestaurantItemModel = {
 	options: RestaurantItemOptionModel[]
 	uid: string
 	description?: string
+	locationUids: string[]
 }
 
 export type RestaurantItemOptionModel = {
@@ -64,10 +65,8 @@ export type RestaurantOrderModel = {
 	uid: string
 }
 
-export const allCategories = (restaurantItems?: RestaurantItemModel[] | RestaurantBagItemModel[]) =>
-	restaurantItems
-		?.map((item) => ('restaurantItem' in item ? item.restaurantItem.category : item.category))
-		.filter(distinct)
+export const allCategories = (restaurantItems: RestaurantItemModel[] | RestaurantBagItemModel[]) =>
+	restaurantItems.map((item) => ('restaurantItem' in item ? item.restaurantItem.category : item.category)).filter(distinct)
 
 export const restaurantBagItemPrice = (restaurantBagItem: RestaurantBagItemModel) =>
 	restaurantBagItem.restaurantItem.price +
@@ -82,9 +81,7 @@ export const restaurantBagItemPrice = (restaurantBagItem: RestaurantBagItemModel
 export const orderTotalPrice = (restaurantOrder: RestaurantOrderModel | RestaurantBagItemModel[]) =>
 	'restaurantBagItems' in restaurantOrder
 		? restaurantOrder.restaurantBagItems.length
-			? restaurantOrder.restaurantBagItems
-					.map((bagItem) => restaurantBagItemPrice(bagItem))
-					.reduce((prev, cur) => prev + cur, 0)
+			? restaurantOrder.restaurantBagItems.map((bagItem) => restaurantBagItemPrice(bagItem)).reduce((prev, cur) => prev + cur, 0)
 			: 0
 		: restaurantOrder.length
 		? restaurantOrder.map((bagItem) => restaurantBagItemPrice(bagItem)).reduce((prev, cur) => prev + cur, 0)
@@ -97,10 +94,7 @@ export const orderReadyMinMinutes = (order: RestaurantOrderModel | RestaurantBag
 			.concat(0)
 	)
 
-export const getRestaurantHours = (
-	restaurant: RestaurantModel,
-	date: Date = new Date()
-): { start: Date; end: Date } | undefined => {
+export const getRestaurantHours = (restaurant: RestaurantModel, date: Date = new Date()): { start: Date; end: Date } | undefined => {
 	const day = daysOfWeek[getDay(date)]
 	if (restaurant.hours[day]) {
 		const [open, close] = [restaurant.hours[day].open, restaurant.hours[day].close]
@@ -122,10 +116,7 @@ export const getMaxRestaurantHours = (restaurant: RestaurantModel): { start: num
 		const [open, close] = [restaurant.hours[day].open, restaurant.hours[day].close]
 		const [openHrs, openMins] = [parseInt(open.slice(0, 2)), parseInt(open.slice(2))]
 		const [closeHrs, closeMins] = [parseInt(close.slice(0, 2)), parseInt(close.slice(2))]
-		const [start, end] = [
-			setHours(setMinutes(setSeconds(date, 0), openMins), openHrs),
-			setHours(setMinutes(setSeconds(date, 0), closeMins), closeHrs),
-		]
+		const [start, end] = [setHours(setMinutes(setSeconds(date, 0), openMins), openHrs), setHours(setMinutes(setSeconds(date, 0), closeMins), closeHrs)]
 		if (start < earliest) earliest = start
 		if (end > latest) latest = end
 	})
