@@ -1,6 +1,6 @@
 import { IonDatetime, IonItem, IonItemDivider, IonLabel, IonList, IonSelect, IonSelectOption } from '@ionic/react'
 import { addDays } from 'date-fns'
-import { RestaurantOrderModel } from '../../data/restaurants/Restaurant'
+import { RestaurantModel, RestaurantOrderModel } from '../../data/restaurants/Restaurant'
 import { formatDateDefault } from '../../util/misc'
 
 type RestaurantOrdersListHalfProps = {
@@ -13,6 +13,9 @@ type RestaurantOrdersListHalfProps = {
 	setFromDate: (fromDate: string) => void
 	toDate: string
 	setToDate: (toDate: string) => void
+	selectedLocationUids: string[]
+	setSelectedLocationUids: (selectedLocationUids: string[]) => void
+	restaurant: RestaurantModel
 }
 
 const RestaurantOrdersListHalf: React.FC<RestaurantOrdersListHalfProps> = ({
@@ -25,10 +28,31 @@ const RestaurantOrdersListHalf: React.FC<RestaurantOrdersListHalfProps> = ({
 	setFromDate,
 	toDate,
 	setToDate,
+	selectedLocationUids,
+	setSelectedLocationUids,
+	restaurant,
 }) => {
 	return (
 		<div className='ordersList'>
 			<IonList style={{ height: '100%' }}>
+				{restaurant.locations.length > 0 && (
+					<IonItem>
+						<IonLabel>Locations</IonLabel>
+						<IonSelect
+							slot='end'
+							value={selectedLocationUids}
+							multiple
+							placeholder='Select Orders'
+							onIonChange={(e) => {
+								setSelectedLocationUids(e.detail.value)
+							}}
+						>
+							{restaurant.locations.map((location) => (
+								<IonSelectOption value={location.uid}>{location.name}</IonSelectOption>
+							))}
+						</IonSelect>
+					</IonItem>
+				)}
 				<IonItem>
 					<IonLabel>Order Status</IonLabel>
 					<IonSelect
@@ -51,19 +75,11 @@ const RestaurantOrdersListHalf: React.FC<RestaurantOrdersListHalfProps> = ({
 				</IonItem>
 				<IonItem>
 					<IonLabel>From Date</IonLabel>
-					<IonDatetime
-						value={fromDate}
-						onIonChange={(e) => setFromDate(e.detail.value ?? '')}
-						max={addDays(new Date(toDate), -1).toISOString()}
-					/>
+					<IonDatetime value={fromDate} onIonChange={(e) => setFromDate(e.detail.value ?? '')} max={addDays(new Date(toDate), -1).toISOString()} />
 				</IonItem>
 				<IonItem>
 					<IonLabel>To Date</IonLabel>
-					<IonDatetime
-						value={toDate}
-						onIonChange={(e) => setToDate(e.detail.value ?? '')}
-						max={new Date().toISOString()}
-					/>
+					<IonDatetime value={toDate} onIonChange={(e) => setToDate(e.detail.value ?? '')} max={new Date().toISOString()} />
 				</IonItem>
 				<IonItemDivider>Orders</IonItemDivider>
 				{filteredOrders.map((order, i) => (

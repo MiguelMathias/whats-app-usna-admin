@@ -3,7 +3,6 @@ import { IonBackButton, IonButtons, IonContent, IonHeader, IonPage, IonTitle, Io
 import { addDays, addWeeks } from 'date-fns'
 import { query, where } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router'
 import RestaurantOrderDetailHalf from '../../components/restaurants/RestaurantOrderDetailHalf'
 import RestaurantOrdersListHalf from '../../components/restaurants/RestaurantOrdersListHalf'
 import { RestaurantModel, RestaurantOrderModel } from '../../data/restaurants/Restaurant'
@@ -17,16 +16,16 @@ type RestaurantOrdersPageProps = {
 }
 
 const RestaurantOrdersPage: React.FC<RestaurantOrdersPageProps> = ({ restaurants }) => {
-	const { restaurantUid } = useParams<{ restaurantUid: string }>()
 	const [restaurant, _] = useGetRestaurant(restaurants)
 	const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['submitted'])
+	const [selectedLocationUids, setSelectedLocationUids] = useState<string[]>([])
 	const [orders, setOrders] = useState<RestaurantOrderModel[]>([])
 	const [selectedOrderIndex, setSelectedOrderIndex] = useState(-1)
 	const [fromDate, setFromDate] = useState<string>(addWeeks(new Date(), -1).toISOString())
 	const [toDate, setToDate] = useState<string>(new Date().toISOString())
 
 	useEffect(() => {
-		if (restaurant)
+		if (restaurant) {
 			onSnapshot(
 				query(
 					collectionGroup(firestore, 'orders'),
@@ -37,9 +36,14 @@ const RestaurantOrdersPage: React.FC<RestaurantOrdersPageProps> = ({ restaurants
 				),
 				(snapshot) => setOrders(snapshot.docs.map((doc) => doc.data() as RestaurantOrderModel))
 			)
+			setSelectedLocationUids(restaurant.locations.length ? restaurant.locations.map((loc) => loc.uid) : [])
+		}
 	}, [fromDate, toDate, restaurant?.uid])
 
-	const filteredOrders = () => orders.filter((order) => selectedStatuses.every((status) => status in order && !!(order as any)[status]))
+	const filteredOrders = () =>
+		orders
+			.filter((order) => selectedStatuses.every((status) => status in order && !!(order as any)[status]))
+			.filter((order) => selectedLocationUids.includes(order.restaurantLocationUid ?? ''))
 
 	if (!restaurant) return <LoadingPage />
 
@@ -64,6 +68,9 @@ const RestaurantOrdersPage: React.FC<RestaurantOrdersPageProps> = ({ restaurants
 					toDate={toDate}
 					setToDate={setToDate}
 					filteredOrders={filteredOrders()}
+					selectedLocationUids={selectedLocationUids}
+					setSelectedLocationUids={setSelectedLocationUids}
+					restaurant={restaurant}
 				/>
 				<RestaurantOrderDetailHalf selectedOrderIndex={selectedOrderIndex} order={orders[selectedOrderIndex]} />
 			</IonContent>
