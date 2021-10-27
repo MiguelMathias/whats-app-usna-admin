@@ -13,7 +13,7 @@ export const useGetRestaurant = (restaurants: RestaurantModel[]): [RestaurantMod
 	const { restaurantUid } = useParams<{ restaurantUid: string }>()
 	const [restaurant, setRestaurant] = useState(
 		restaurantUid === 'add'
-			? ({ name: '', uid: '', hours: {}, active: false, manuallyClosed: false } as RestaurantModel)
+			? ({ name: '', uid: '', hours: {}, active: false, manuallyClosed: false, description: '', locations: [] } as RestaurantModel)
 			: restaurants.find((restaurant) => restaurant.uid === restaurantUid)
 	)
 	useEffect(() => setRestaurant(restaurants.find((restaurant) => restaurant.uid === restaurantUid)), [restaurantUid, restaurants.length])

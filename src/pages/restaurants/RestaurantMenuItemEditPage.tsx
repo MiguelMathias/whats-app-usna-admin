@@ -1,4 +1,5 @@
 import { collection, collectionGroup, deleteDoc, query, setDoc, where } from '@firebase/firestore'
+import { getDownloadURL, listAll, ref, uploadBytes } from '@firebase/storage'
 import {
 	IonBackButton,
 	IonButton,
@@ -15,17 +16,26 @@ import {
 	IonPage,
 	IonRadio,
 	IonRadioGroup,
+	IonReorder,
+	IonReorderGroup,
 	IonTextarea,
 	IonTitle,
 	IonToolbar,
+	useIonLoading,
 	useIonRouter,
 } from '@ionic/react'
 import { doc, getDocs } from 'firebase/firestore'
 import { addOutline, checkmarkOutline, removeOutline } from 'ionicons/icons'
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
-import { RestaurantItemIngredientModel, RestaurantItemModel, RestaurantItemOptionModel, RestaurantModel } from '../../data/restaurants/Restaurant'
-import { firestore } from '../../Firebase'
+import {
+	RestaurantItemIngredientModel,
+	RestaurantItemModel,
+	RestaurantItemOptionModel,
+	RestaurantItemOptionSelectableModel,
+	RestaurantModel,
+} from '../../data/restaurants/Restaurant'
+import { deleteStorageFolder, firestore, storage } from '../../Firebase'
 import { useGetRestaurant } from '../../util/hooks'
 import { capitalize, decodeB64Url } from '../../util/misc'
 import LoadingPage from '../LoadingPage'
@@ -51,13 +61,23 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 					price: 5,
 					restaurantUid: restaurant?.uid,
 					uid: '',
-					locationUids: restaurant?.locations.map((location) => location.uid),
+					locationUids: restaurant?.locations.map((location) => location.uid) ?? [],
 			  } as RestaurantItemModel)
 			: decodeB64Url<RestaurantItemModel>(restaurantItemB64)
 	)
 
+	const [imgFiles, setImgFiles] = useState<File[]>([])
+	const [showLoading, hideLoading] = useIonLoading()
+
 	useEffect(() => {
-		if (restaurant?.uid) setRestaurantItem({ ...restaurantItem, restaurantUid: restaurant.uid })
+		if (restaurant?.uid) {
+			setRestaurantItem({ ...restaurantItem, restaurantUid: restaurant.uid })
+			listAll(ref(storage, `restaurants/${restaurant.uid}/items/${restaurantItem.uid}/pictures`)).then(async (fileList) => {
+				setImgFiles(
+					await Promise.all(fileList.items.map(async (item) => new File([await (await fetch(await getDownloadURL(item))).blob()], item.name)))
+				)
+			})
+		}
 	}, [restaurant?.uid])
 
 	if (!restaurant) return <LoadingPage />
@@ -74,11 +94,6 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 						<IonButton
 							disabled={!(restaurantItem.name && restaurantItem.category && restaurantItem.ingredients.every((ing) => !!ing.name))}
 							onClick={async () => {
-								setRestaurantItem({
-									...restaurantItem,
-									ingredients: restaurantItem.ingredients.filter((ing) => !!ing.name),
-									options: restaurantItem.options.filter((opt) => !!opt.name),
-								})
 								if (addOrEdit === 'edit') {
 									//Update restaurant item of old item name
 									const restaurantItemToUpdate = doc(firestore, 'restaurants', restaurant.uid, 'items', restaurantItem.uid)
@@ -104,12 +119,32 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 										'Deleted bag items of name ' + restaurantItem.name,
 										bagItemsToDelete.map((doc) => doc.data())
 									)
+
+									//update images in firebase storage
+									await deleteStorageFolder(storage, `restaurants/${restaurant.uid}/items/${restaurantItem.uid}/pictures`)
+									await Promise.all(
+										imgFiles.map(async (imgFile, i) => {
+											const imgLocRef = ref(
+												storage,
+												`restaurants/${restaurant.uid}/items/${restaurantItem.uid}/pictures/${restaurantItem.uid}-${i}`
+											)
+											await uploadBytes(imgLocRef, imgFile)
+										})
+									)
 								} else {
 									const newDoc = doc(collection(firestore, 'restaurants', restaurant.uid, 'items'))
 									await setDoc(newDoc, { ...restaurantItem, uid: newDoc.id } as RestaurantItemModel)
 									console.log('Added item to firestore', restaurantItem)
+									//Add images to firebase storage
+									await Promise.all(
+										imgFiles.map(async (imgFile, i) => {
+											const imgLocRef = ref(storage, `restaurants/${restaurant.uid}/items/${newDoc.id}/pictures/${newDoc.id}-${i}`)
+											await uploadBytes(imgLocRef, imgFile)
+										})
+									)
 								}
-								router.goBack()
+
+								router.push(`/restaurants/${restaurant.uid}/menu`, 'back', 'pop')
 							}}
 						>
 							<IonIcon slot='icon-only' icon={checkmarkOutline} />
@@ -202,201 +237,300 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 						</>
 					)}
 					<IonItemDivider>Ingredients:</IonItemDivider>
-					{restaurantItem.ingredients.concat({ name: '' } as RestaurantItemIngredientModel).map((ingredient, i) => {
-						const isNewIngredient = i === restaurantItem.ingredients.length
-						return (
-							<IonItem key={i}>
-								{!isNewIngredient && (
-									<IonCheckbox
-										slot='start'
-										checked={restaurantItem.selectedIngredients.includes(i)}
-										onClick={() =>
-											setRestaurantItem({
-												...restaurantItem,
-												selectedIngredients: restaurantItem.selectedIngredients.includes(i)
-													? restaurantItem.selectedIngredients.filter((ingIndex) => ingIndex !== i)
-													: restaurantItem.selectedIngredients.concat(i),
-											})
-										}
-									/>
-								)}
-								<IonInput
-									placeholder={`${isNewIngredient ? 'New ' : ''}Ingredient Name`}
-									value={ingredient.name}
-									onIonChange={(e) => {
-										if (!ingredient.name && !e.detail.value) return
-										const newIngredient = { ...ingredient, name: e.detail.value ?? '' }
-										if (isNewIngredient) {
-											restaurantItem.ingredients = restaurantItem.ingredients.concat(newIngredient)
-											setRestaurantItem({ ...restaurantItem })
-											return
-										}
-										if (!e.detail.value) {
-											setRestaurantItem({ ...restaurantItem, ingredients: restaurantItem.ingredients.removeIndex(i) })
-											return
-										}
-										restaurantItem.ingredients[i] = newIngredient
-										setRestaurantItem({ ...restaurantItem })
-									}}
-								/>
-								{!isNewIngredient && (
-									<>
-										<IonLabel>$</IonLabel>
-										<div style={{ float: 'right', width: '50px' }}>
-											<IonInput
-												placeholder='0'
-												type='number'
-												slot='end'
-												min='0'
-												value={ingredient.price ?? 0}
-												onIonChange={(e) => {
-													const price = parseFloat(e.detail.value ?? '0')
-													if (!ingredient.price && !price) return
-													const newIngredient = {
-														...ingredient,
-														price: price === NaN || price < 0 ? 0 : price,
-													}
-													if (isNewIngredient) {
-														setRestaurantItem({ ...restaurantItem, ingredients: restaurantItem.ingredients.concat(newIngredient) })
-														return
-													}
-													restaurantItem.ingredients[i] = newIngredient
-													setRestaurantItem({ ...restaurantItem })
-												}}
-											/>
-										</div>
-										<IonButtons slot='end'>
-											<IonButton
-												onClick={() => setRestaurantItem({ ...restaurantItem, ingredients: restaurantItem.ingredients.removeIndex(i) })}
-											>
-												<IonIcon slot='icon-only' icon={isNewIngredient ? addOutline : removeOutline} />
-											</IonButton>
-										</IonButtons>
-									</>
-								)}
-							</IonItem>
-						)
-					})}
-					<IonItemDivider>Options</IonItemDivider>
-					{restaurantItem.options.concat({ name: '', selectable: [], selected: -1 } as RestaurantItemOptionModel).map((option, i) => {
-						const isNewOption = i === restaurantItem.options.length
-						return (
-							<React.Fragment key={i}>
-								<IonItem>
+					<IonReorderGroup
+						disabled={false}
+						onIonItemReorder={(e) => {
+							restaurantItem.ingredients.splice(e.detail.to, 0, restaurantItem.ingredients.splice(e.detail.from, 1)[0])
+							setRestaurantItem((restaurantItem) => restaurantItem)
+							e.detail.complete()
+						}}
+					>
+						{restaurantItem.ingredients.concat({ name: '', price: 0, selected: false } as RestaurantItemIngredientModel).map((ingredient, i) => {
+							const isNewIngredient = i === restaurantItem.ingredients.length
+							return (
+								<IonItem key={i}>
+									{!isNewIngredient && (
+										<IonCheckbox
+											slot='start'
+											checked={ingredient.selected}
+											onIonChange={(e) => {
+												ingredient.selected = e.detail.checked
+												setRestaurantItem((restaurantItem) => ({
+													...restaurantItem,
+												}))
+											}}
+										/>
+									)}
 									<IonInput
-										value={option.name}
-										placeholder={`${isNewOption ? 'New ' : ''}Option Name`}
+										placeholder={`${isNewIngredient ? 'New ' : ''}Ingredient Name`}
+										value={ingredient.name}
 										onIonChange={(e) => {
-											if (!option.name && !e.detail.value) return
-											const newOption = { ...option, name: e.detail.value ?? '' }
-											if (isNewOption) {
-												setRestaurantItem({ ...restaurantItem, options: restaurantItem.options.concat(newOption) })
+											if (!ingredient.name && !e.detail.value) return
+											const newIngredient = { ...ingredient, name: e.detail.value ?? '' }
+											if (isNewIngredient) {
+												restaurantItem.ingredients = restaurantItem.ingredients.concat(newIngredient)
+												setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
 												return
 											}
 											if (!e.detail.value) {
-												restaurantItem.options = restaurantItem.options.removeIndex(i)
-												setRestaurantItem({ ...restaurantItem })
+												setRestaurantItem({ ...restaurantItem, ingredients: restaurantItem.ingredients.removeIndex(i) })
 												return
 											}
-											restaurantItem.options[i] = newOption
-											setRestaurantItem({ ...restaurantItem })
+											restaurantItem.ingredients[i] = newIngredient
+											setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
 										}}
 									/>
-									{!isNewOption && (
-										<IonButtons slot='end'>
-											<IonButton onClick={() => setRestaurantItem({ ...restaurantItem, options: restaurantItem.options.removeIndex(i) })}>
-												<IonIcon slot='icon-only' icon={removeOutline} />
-											</IonButton>
-										</IonButtons>
+									{!isNewIngredient && (
+										<>
+											<IonLabel>$</IonLabel>
+											<div style={{ float: 'right', width: '50px' }}>
+												<IonInput
+													placeholder='0'
+													type='number'
+													slot='end'
+													min='0'
+													value={ingredient.price ?? 0}
+													onIonChange={(e) => {
+														const price = parseFloat(e.detail.value ?? '0')
+														if (!ingredient.price && !price) return
+														const newIngredient = {
+															...ingredient,
+															price: price === NaN || price < 0 ? 0 : price,
+														}
+														if (isNewIngredient) {
+															setRestaurantItem({
+																...restaurantItem,
+																ingredients: restaurantItem.ingredients.concat(newIngredient),
+															})
+															return
+														}
+														restaurantItem.ingredients[i] = newIngredient
+														setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+													}}
+												/>
+											</div>
+											<IonButtons slot='end'>
+												<IonButton
+													onClick={() =>
+														setRestaurantItem({ ...restaurantItem, ingredients: restaurantItem.ingredients.removeIndex(i) })
+													}
+												>
+													<IonIcon slot='icon-only' icon={isNewIngredient ? addOutline : removeOutline} />
+												</IonButton>
+											</IonButtons>
+											<IonReorder slot='end' />
+										</>
 									)}
 								</IonItem>
-								{!isNewOption && (
-									<IonList style={{ width: '100%', paddingLeft: 10 }}>
-										<IonRadioGroup value={option.selected}>
-											{option.selectable.concat({ name: '', price: 0 }).map((select, j) => {
-												const isNewSelect = j === option.selectable.length
-												return (
-													<IonItem key={j}>
-														{!isNewSelect && (
-															<IonRadio
-																onClick={() => {
-																	if (option.selected === j) option.selected = -1
-																	else option.selected = j
-																	setRestaurantItem({ ...restaurantItem })
+							)
+						})}
+					</IonReorderGroup>
+					<IonItemDivider>Options</IonItemDivider>
+					<IonReorderGroup
+						disabled={false}
+						onIonItemReorder={(e) => {
+							restaurantItem.options.splice(e.detail.to, 0, restaurantItem.options.splice(e.detail.from, 1)[0])
+							setRestaurantItem((restaurantItem) => restaurantItem)
+							e.detail.complete()
+						}}
+					>
+						{restaurantItem.options.concat({ name: '', selectable: [], selected: -1 } as RestaurantItemOptionModel).map((option, i) => {
+							const isNewOption = i === restaurantItem.options.length
+							return (
+								<React.Fragment key={i}>
+									<IonItem>
+										<div style={{ width: '100%' }}>
+											<IonItem>
+												<IonInput
+													value={option.name}
+													placeholder={`${isNewOption ? 'New ' : ''}Option Name`}
+													onIonChange={(e) => {
+														if (!option.name && !e.detail.value) return
+														const newOption = { ...option, name: e.detail.value ?? '' }
+														if (isNewOption) {
+															setRestaurantItem({ ...restaurantItem, options: restaurantItem.options.concat(newOption) })
+															return
+														}
+														if (!e.detail.value) {
+															restaurantItem.options = restaurantItem.options.removeIndex(i)
+															setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+															return
+														}
+														restaurantItem.options[i] = newOption
+														setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+													}}
+												/>
+												{!isNewOption && (
+													<>
+														<IonButtons slot='end'>
+															<IonButton
+																onClick={() =>
+																	setRestaurantItem({ ...restaurantItem, options: restaurantItem.options.removeIndex(i) })
+																}
+															>
+																<IonIcon slot='icon-only' icon={removeOutline} />
+															</IonButton>
+														</IonButtons>
+														<IonReorder slot='end' />
+													</>
+												)}
+											</IonItem>
+
+											{!isNewOption && (
+												<div style={{ width: '100%' }}>
+													<IonList style={{ width: '100%', paddingLeft: 10 }}>
+														<IonRadioGroup value={option.selectable.findIndex((select) => select.selected)}>
+															<IonReorderGroup
+																disabled={false}
+																onIonItemReorder={(e) => {
+																	e.stopPropagation()
+																	option.selectable.splice(e.detail.to, 0, option.selectable.splice(e.detail.from, 1)[0])
+																	setRestaurantItem((restaurantItem) => restaurantItem)
+																	e.detail.complete()
 																}}
-																slot='start'
-																value={j}
-															/>
-														)}
-														<IonInput
-															placeholder={`${isNewSelect ? 'New ' : ''}Selectable Item for ${option.name}`}
-															value={select.name}
-															onIonChange={(e) => {
-																if (!select.name && !e.detail.value) return
-																const newSelect = { ...select, name: e.detail.value ?? '' }
-																if (isNewSelect) {
-																	option.selectable = option.selectable.concat(newSelect)
-																	setRestaurantItem({ ...restaurantItem })
-																	return
-																}
-																if (!e.detail.value) {
-																	option.selectable = option.selectable.removeIndex(j)
-																	setRestaurantItem({ ...restaurantItem })
-																	return
-																}
-																option.selectable[j] = newSelect
-																setRestaurantItem({ ...restaurantItem })
-															}}
-														/>
-														{!isNewSelect && (
-															<>
-																<IonLabel>$</IonLabel>
-																<div style={{ float: 'right', width: '50px' }}>
-																	<IonInput
-																		placeholder='0'
-																		type='number'
-																		slot='end'
-																		min='0'
-																		value={select.price ?? 0}
-																		onIonChange={(e) => {
-																			const price = parseFloat(e.detail.value ?? '0')
-																			if (!select.price && !price) return
-																			const newSelect = {
-																				...select,
-																				price: price === NaN || price < 0 ? 0 : price,
-																			}
-																			if (isNewSelect) {
-																				restaurantItem.options[i].selectable =
-																					restaurantItem.options[i].selectable.concat(newSelect)
-																				setRestaurantItem({ ...restaurantItem })
-																				return
-																			}
-																			restaurantItem.options[i].selectable[j] = newSelect
-																			setRestaurantItem({ ...restaurantItem })
-																		}}
-																	/>
-																</div>
-																<IonButtons slot='end'>
-																	<IonButton
-																		onClick={() => {
-																			option.selectable = option.selectable.removeIndex(j)
-																			setRestaurantItem({ ...restaurantItem })
-																		}}
-																	>
-																		<IonIcon slot='icon-only' icon={removeOutline} />
-																	</IonButton>
-																</IonButtons>
-															</>
-														)}
-													</IonItem>
-												)
-											})}
-										</IonRadioGroup>
-									</IonList>
-								)}
-							</React.Fragment>
-						)
-					})}
+															>
+																{option.selectable.concat({ name: '', price: 0, selected: false }).map((select, j) => {
+																	const isNewSelect = j === option.selectable.length
+																	return (
+																		<IonItem key={j}>
+																			{!isNewSelect && (
+																				<IonRadio
+																					onClick={() => {
+																						if (option.selectable[j].selected)
+																							option.selectable = option.selectable.map(
+																								(select) =>
+																									({
+																										...select,
+																										selected: false,
+																									} as RestaurantItemOptionSelectableModel)
+																							)
+																						else
+																							option.selectable = option.selectable.map(
+																								(select, k) =>
+																									(k === j
+																										? { ...select, selected: true }
+																										: {
+																												...select,
+																												selected: false,
+																										  }) as RestaurantItemOptionSelectableModel
+																							)
+																						setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+																					}}
+																					slot='start'
+																					value={j}
+																				/>
+																			)}
+																			<IonInput
+																				placeholder={`${isNewSelect ? 'New ' : ''}Selectable Item for ${option.name}`}
+																				value={select.name}
+																				onIonChange={(e) => {
+																					if (!select.name && !e.detail.value) return
+																					const newSelect = { ...select, name: e.detail.value ?? '' }
+																					if (isNewSelect) {
+																						option.selectable = option.selectable.concat(newSelect)
+																						setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+																						return
+																					}
+																					if (!e.detail.value) {
+																						option.selectable = option.selectable.removeIndex(j)
+																						setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+																						return
+																					}
+																					option.selectable[j] = newSelect
+																					setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+																				}}
+																			/>
+																			{!isNewSelect && (
+																				<>
+																					<IonLabel>$</IonLabel>
+																					<div style={{ float: 'right', width: '50px' }}>
+																						<IonInput
+																							placeholder='0'
+																							type='number'
+																							slot='end'
+																							min='0'
+																							value={select.price ?? 0}
+																							onIonChange={(e) => {
+																								const price = parseFloat(e.detail.value ?? '0')
+																								if (!select.price && !price) return
+																								const newSelect = {
+																									...select,
+																									price: price === NaN || price < 0 ? 0 : price,
+																								}
+																								if (isNewSelect) {
+																									restaurantItem.options[i].selectable =
+																										restaurantItem.options[i].selectable.concat(newSelect)
+																									setRestaurantItem((restaurantItem) => ({
+																										...restaurantItem,
+																									}))
+																									return
+																								}
+																								restaurantItem.options[i].selectable[j] = newSelect
+																								setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+																							}}
+																						/>
+																					</div>
+																					<IonButtons slot='end'>
+																						<IonButton
+																							onClick={() => {
+																								option.selectable = option.selectable.removeIndex(j)
+																								setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+																							}}
+																						>
+																							<IonIcon slot='icon-only' icon={removeOutline} />
+																						</IonButton>
+																					</IonButtons>
+																					<IonReorder slot='end' />
+																				</>
+																			)}
+																		</IonItem>
+																	)
+																})}
+															</IonReorderGroup>
+														</IonRadioGroup>
+													</IonList>
+												</div>
+											)}
+										</div>
+									</IonItem>
+								</React.Fragment>
+							)
+						})}
+					</IonReorderGroup>
+					<IonItemDivider>Images</IonItemDivider>
+					<IonItem>
+						<input
+							type='file'
+							accept='.jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*'
+							multiple
+							onChange={(e) => setImgFiles(Array.from(e.target.files ?? []))}
+						/>
+						<IonButton slot='end' onClick={() => setImgFiles([])}>
+							Clear
+						</IonButton>
+					</IonItem>
+					{imgFiles.length > 0 && (
+						<IonReorderGroup
+							disabled={false}
+							onIonItemReorder={(e) => {
+								imgFiles.splice(e.detail.to, 0, imgFiles.splice(e.detail.from, 1)[0])
+								setImgFiles(imgFiles)
+								e.detail.complete()
+							}}
+						>
+							{[...Array.from(imgFiles)].map((imgFile, i) => (
+								<IonItem key={i}>
+									<img style={{ maxWidth: 250 }} src={URL.createObjectURL(imgFile)} />
+									<IonButtons slot='end'>
+										<IonButton onClick={() => setImgFiles(imgFiles.removeIndex(i))}>
+											<IonIcon slot='icon-only' icon={removeOutline} />
+										</IonButton>
+									</IonButtons>
+									<IonReorder slot='end' />
+								</IonItem>
+							))}
+						</IonReorderGroup>
+					)}
 				</IonList>
 			</IonContent>
 		</IonPage>

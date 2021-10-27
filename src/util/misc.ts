@@ -18,6 +18,7 @@ declare global {
 		remove(elem: T, item?: T): T[]
 		removeIndex(index: number, item?: T): T[]
 		indexOfValue(elem: T): number
+		insertIndex(index: number, ...items: T[]): T[]
 	}
 
 	interface Date {
@@ -25,19 +26,17 @@ declare global {
 	}
 }
 
-if (!Array.prototype.remove) {
+if (!Array.prototype.remove)
 	Array.prototype.remove = function <T>(this: T[], elem: T, item?: T): T[] {
 		const index = this.indexOfValue(elem)
 		if (index !== -1) return this.removeIndex(index)
 		return this
 	}
-}
 
-if (!Array.prototype.removeIndex) {
+if (!Array.prototype.removeIndex)
 	Array.prototype.removeIndex = function <T>(this: T[], index: number, item?: T): T[] {
 		return this.slice(0, index).concat(this.slice(index + 1))
 	}
-}
 
 if (!Array.prototype.indexOfValue)
 	Array.prototype.indexOfValue = function <T>(this: T[], elem: T): number {
@@ -45,6 +44,11 @@ if (!Array.prototype.indexOfValue)
 		this.forEach((item, itemIndex) => (index = object_equals(item, elem) ? itemIndex : index))
 
 		return index
+	}
+
+if (!Array.prototype.insertIndex)
+	Array.prototype.insertIndex = function <T>(this: T[], index: number, ...items: T[]) {
+		return [...this.slice(0, index), ...items, ...this.slice(index)]
 	}
 
 if (!Date.prototype.getDateWithoutTime)

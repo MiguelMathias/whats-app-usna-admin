@@ -17,7 +17,7 @@ import {
 import { addOutline, checkmarkOutline, createOutline, removeOutline } from 'ionicons/icons'
 import React, { useEffect, useState } from 'react'
 import { allCategories, RestaurantItemModel, RestaurantModel } from '../../data/restaurants/Restaurant'
-import { firestore } from '../../Firebase'
+import { deleteStorageFolder, firestore, storage } from '../../Firebase'
 import { useGetRestaurant } from '../../util/hooks'
 import { capitalize, encodeB64Url } from '../../util/misc'
 import LoadingPage from '../LoadingPage'
@@ -105,6 +105,8 @@ const RestaurantMenuEditPage: React.FC<RestaurantMenuEditPageProps> = ({ restaur
 																.map(deleteDoc)
 														)
 														console.log('Deleted all restaurant items of name ' + restaurantItem.name)
+														//Delete item folder from firebase storage
+														await deleteStorageFolder(storage, `restaurants/${restaurant.uid}/items/${restaurantItem.uid}`)
 													}}
 												>
 													<IonIcon slot='icon-only' icon={removeOutline} />

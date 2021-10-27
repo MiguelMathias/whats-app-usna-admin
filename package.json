@@ -18,6 +18,7 @@
     "date-fns": "^2.25.0",
     "firebase": "^9.1.1",
     "ionicons": "^5.4.0",
+    "just-clone": "^4.0.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-router": "^5.2.0",

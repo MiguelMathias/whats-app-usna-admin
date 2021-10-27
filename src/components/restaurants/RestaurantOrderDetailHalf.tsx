@@ -59,10 +59,7 @@ const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ s
 												...updatedOrder,
 												fulfilled: serverTimestamp() as any,
 											}
-										setDoc(
-											doc(firestore, 'users', order.userUid, 'orders', order.uid),
-											updatedOrder
-										)
+										setDoc(doc(firestore, 'users', order.userUid, 'orders', order.uid), updatedOrder)
 									}}
 								>
 									<IonIcon slot='icon-only' icon={checkmarkOutline} />
@@ -76,10 +73,7 @@ const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ s
 								<IonLabel>Submitted</IonLabel>
 								<IonLabel slot='end'>{formatDateDefault(order.submitted?.toDate())}</IonLabel>
 							</IonItem>
-							<IonRadioGroup
-								value={acceptOrReject}
-								onIonChange={(e) => setAcceptOrReject(e.detail.value)}
-							>
+							<IonRadioGroup value={acceptOrReject} onIonChange={(e) => setAcceptOrReject(e.detail.value)}>
 								{!order.rejected && (
 									<IonItem>
 										<IonLabel>
@@ -89,9 +83,7 @@ const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ s
 										{!order.accepted && !order.rejected ? (
 											<IonRadio slot='end' value='accepted' />
 										) : (
-											<IonLabel slot='end'>
-												{formatDateDefault(order.accepted?.toDate())}
-											</IonLabel>
+											<IonLabel slot='end'>{formatDateDefault(order.accepted?.toDate())}</IonLabel>
 										)}
 									</IonItem>
 								)}
@@ -104,9 +96,7 @@ const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ s
 										{!order.accepted && !order.rejected ? (
 											<IonRadio slot='end' value='rejected' />
 										) : (
-											<IonLabel slot='end'>
-												{formatDateDefault(order.rejected?.toDate())}
-											</IonLabel>
+											<IonLabel slot='end'>{formatDateDefault(order.rejected?.toDate())}</IonLabel>
 										)}
 									</IonItem>
 								)}
@@ -115,11 +105,7 @@ const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ s
 								<IonItem>
 									<IonLabel>Fulfilled</IonLabel>
 									{!order.fulfilled ? (
-										<IonCheckbox
-											slot='end'
-											checked={fulfilled}
-											onIonChange={() => setFulfilled(!fulfilled)}
-										/>
+										<IonCheckbox slot='end' checked={fulfilled} onIonChange={() => setFulfilled(!fulfilled)} />
 									) : (
 										<IonLabel slot='end'>{formatDateDefault(order.fulfilled?.toDate())}</IonLabel>
 									)}
@@ -130,9 +116,7 @@ const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ s
 								<AccordionIonItem
 									key={i}
 									initiallyOpen
-									header={`${restaurantBagItem.restaurantItem.name}: $${restaurantBagItemPrice(
-										restaurantBagItem
-									)}`}
+									header={`${restaurantBagItem.restaurantItem.name}: $${restaurantBagItemPrice(restaurantBagItem)}`}
 								>
 									<IonList>
 										<IonItem>
@@ -150,15 +134,16 @@ const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ s
 											<b>Options:</b>
 											<div slot='end' style={{ textAlign: 'right' }}>
 												{restaurantBagItem.restaurantItem.options
-													.filter((option) => option.selected >= 0)
-													.map((option, i) => (
-														<p key={i}>
-															<ins>{option.name}:</ins>{' '}
-															{option.selectable[option.selected].name}
-															{option.selectable[option.selected].price &&
-																` (+$${option.selectable[option.selected].price})`}
-														</p>
-													))}
+													.filter((option) => option.selectable.findIndex((select) => select.selected) >= 0)
+													.map((option, i) => {
+														const select = option.selectable.find((select) => select.selected)
+														return (
+															<p key={i}>
+																<ins>{option.name}:</ins> {select?.name}
+																{select?.price && ` (+$${select?.price})`}
+															</p>
+														)
+													})}
 											</div>
 										</IonItem>
 										{restaurantBagItem.note && (
