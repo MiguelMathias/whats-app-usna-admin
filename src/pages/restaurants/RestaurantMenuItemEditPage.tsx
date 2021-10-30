@@ -503,7 +503,7 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 							type='file'
 							accept='.jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*'
 							multiple
-							onChange={(e) => setImgFiles(Array.from(e.target.files ?? []))}
+							onChange={(e) => setImgFiles(imgFiles.concat(Array.from(e.target.files ?? [])))}
 						/>
 						<IonButton slot='end' onClick={() => setImgFiles([])}>
 							Clear

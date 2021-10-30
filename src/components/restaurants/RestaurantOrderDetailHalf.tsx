@@ -31,7 +31,7 @@ type RestaurantOrderDetailHalfProps = {
 
 const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ selectedOrderIndex, order }) => {
 	const [acceptOrReject, setAcceptOrReject] = useState<string>()
-	const [fulfilled, setFulfilled] = useState<boolean>(false)
+	const [ready, setReady] = useState<boolean>(false)
 
 	return (
 		<div className='ordersView'>
@@ -54,10 +54,10 @@ const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ s
 												...updatedOrder,
 												rejected: serverTimestamp() as any,
 											}
-										else if (order.accepted && !order.fulfilled && fulfilled)
+										else if (order.accepted && !order.pickupReady && ready)
 											updatedOrder = {
 												...updatedOrder,
-												fulfilled: serverTimestamp() as any,
+												pickupReady: serverTimestamp() as any,
 											}
 										setDoc(doc(firestore, 'users', order.userUid, 'orders', order.uid), updatedOrder)
 									}}
@@ -103,11 +103,11 @@ const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ s
 							</IonRadioGroup>
 							{order.accepted && (
 								<IonItem>
-									<IonLabel>Fulfilled</IonLabel>
-									{!order.fulfilled ? (
-										<IonCheckbox slot='end' checked={fulfilled} onIonChange={() => setFulfilled(!fulfilled)} />
+									<IonLabel>Ready to Pickup?</IonLabel>
+									{!order.pickupReady ? (
+										<IonCheckbox slot='end' checked={ready} onIonChange={() => setReady(!ready)} />
 									) : (
-										<IonLabel slot='end'>{formatDateDefault(order.fulfilled?.toDate())}</IonLabel>
+										<IonLabel slot='end'>{formatDateDefault(order.pickupReady?.toDate())}</IonLabel>
 									)}
 								</IonItem>
 							)}
