@@ -14,18 +14,20 @@ import '@ionic/react/css/text-alignment.css'
 import '@ionic/react/css/text-transformation.css'
 import '@ionic/react/css/typography.css'
 import { onAuthStateChanged, signOut, User } from 'firebase/auth'
-import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore'
+import { collection, doc, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore'
 import React, { useEffect, useState } from 'react'
 import { Redirect, Route } from 'react-router-dom'
-import { useEffectOnce } from 'react-use'
 import { AppContext, AppContextType } from './AppContext'
 import SideMenu from './components/SideMenu'
 import { AdminsModel, isAdmin, UserDataModel } from './data/account/User'
+import { UpdatePost } from './data/mfsd/MFSD'
 import { RestaurantModel } from './data/restaurants/Restaurant'
 import { auth, firestore } from './Firebase'
 import Account from './pages/account/Account'
 import ManageAdminsPage from './pages/account/ManageAdminsPage'
 import MFSDAdminPage from './pages/mfsd/MFSDAdminPage'
+import MFSDUpdateEditPage from './pages/mfsd/MFSDUpdateEditPage'
+import MFSDUpdatesPage from './pages/mfsd/MFSDUpdatesPage'
 import MWFAdminPage from './pages/mwf/MWFAdminPage'
 import NABSDAdminPage from './pages/nabsd/NABSDAdminPage'
 import RestaurantHomePage from './pages/restaurants/RestaurantHomePage'
@@ -35,12 +37,14 @@ import RestaurantMenuItemEditPage from './pages/restaurants/RestaurantMenuItemEd
 import RestaurantOrdersPage from './pages/restaurants/RestaurantOrdersPage'
 /* Theme variables */
 import './theme/variables.css'
+import { useSubCollection, useSubDoc } from './util/hooks'
 
 const App: React.FC = () => {
 	const [user, setUser] = useState<User | undefined>(undefined)
 	const [userData, setUserData] = useState<UserDataModel | undefined>(undefined)
-	const [restaurants, setRestaurants] = useState<RestaurantModel[]>([])
-	const [admins, setAdmins] = useState({ all: [], depts: {} } as AdminsModel)
+	const [restaurants] = useSubCollection<RestaurantModel>(collection(firestore, 'restaurants'))
+	const [admins, setAdmins] = useSubDoc<AdminsModel>(doc(firestore, 'admin', 'admins'))
+	const [updates] = useSubCollection<UpdatePost>(query(collection(firestore, 'mfsd'), orderBy('posted', 'desc'), orderBy('updateUid')))
 	const [showBadAccountToast, _] = useIonToast()
 
 	const filteredRestaurants = () => restaurants.filter((restaurant) => isAdmin(admins, userData, restaurant.uid))
@@ -77,16 +81,14 @@ const App: React.FC = () => {
 	onAuthStateChanged(auth, (user) => {
 		if (/[a-zA-Z0-9]*@usna\.edu/.test(user?.email ?? '') /* /m[1-9]{6}@usna\.edu/.test(user?.email ?? '') */) setUser(user ?? undefined)
 		else if (user) {
-			showBadAccountToast({ header: 'Wrong Account!', message: 'Must sign in with USNA (@usna.edu) Google account', color: 'warning', duration: 2000 })
+			showBadAccountToast({
+				header: 'Wrong Account!',
+				message: 'Must sign in with USNA (@usna.edu) Google account',
+				color: 'warning',
+				duration: 2000,
+			})
 			signOut(auth)
 		} else setUser(undefined)
-	})
-
-	useEffectOnce(() => {
-		onSnapshot(collection(firestore, 'restaurants'), (snapshot) => setRestaurants(snapshot.docs.map((doc) => doc.data() as RestaurantModel)))
-		onSnapshot(doc(firestore, 'admin', 'admins'), (snapshot) => {
-			setAdmins(snapshot.data() as AdminsModel)
-		})
 	})
 
 	return (
@@ -119,6 +121,12 @@ const App: React.FC = () => {
 							</Route>
 							<Route exact path='/mfsd'>
 								{isAdmin(admins, userData, 'mfsd') ? <MFSDAdminPage /> : <></>}
+							</Route>
+							<Route exact path='/mfsd/updates'>
+								<MFSDUpdatesPage updates={updates} />
+							</Route>
+							<Route exact path='/mfsd/updates/:updateUid'>
+								<MFSDUpdateEditPage updates={updates} />
 							</Route>
 							<Route exact path='/mwf'>
 								{isAdmin(admins, userData, 'mwf') ? <MWFAdminPage /> : <></>}

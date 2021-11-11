@@ -60,7 +60,11 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 				</p>
 			</IonItem>
 			<IonItem>
-				<IonInput placeholder='Restaurant Name' value={deleteRestaurantText} onIonChange={(e) => setDeleteRestaurantText(e.detail.value ?? '')} />
+				<IonInput
+					placeholder='Restaurant Name'
+					value={deleteRestaurantText}
+					onIonChange={(e) => setDeleteRestaurantText(e.detail.value ?? '')}
+				/>
 			</IonItem>
 			<IonToolbar>
 				<IonButtons slot='start'>
@@ -74,23 +78,40 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 							if (restaurant) {
 								//delete all user favorites with restaurant id
 								const userFavoritesDocs = await getDocs(
-									query(collectionGroup(firestore, 'favorites'), where('restaurantUid', '==', restaurant?.uid))
+									query(
+										collectionGroup(firestore, 'favorites'),
+										where('restaurantUid', '==', restaurant?.uid)
+									)
 								)
 								//delete all user bag items with restaurant id
 								const bagItemDocs = await getDocs(
-									query(collectionGroup(firestore, 'bag'), where('restaurantItem.restaurantUid', '==', restaurant?.uid))
+									query(
+										collectionGroup(firestore, 'bag'),
+										where('restaurantItem.restaurantUid', '==', restaurant?.uid)
+									)
 								)
 								//delete all user orders with restaurant id
-								const orderDocs = await getDocs(query(collectionGroup(firestore, 'orders'), where('restaurantUid', '==', restaurant?.uid)))
+								const orderDocs = await getDocs(
+									query(
+										collectionGroup(firestore, 'orders'),
+										where('restaurantUid', '==', restaurant?.uid)
+									)
+								)
 								//delete all restaurant items
-								const restaurantItemsDocs = await getDocs(collection(firestore, 'restaurants', restaurant?.uid, 'items'))
+								const restaurantItemsDocs = await getDocs(
+									collection(firestore, 'restaurants', restaurant?.uid, 'items')
+								)
 								//delete restaurant doc
 								const restaurantDoc = await getDoc(doc(firestore, 'restaurants', restaurant.uid))
 
 								await Promise.all(
-									[...userFavoritesDocs.docs, ...bagItemDocs.docs, ...orderDocs.docs, ...restaurantItemsDocs.docs, restaurantDoc].map((doc) =>
-										deleteDoc(doc.ref)
-									)
+									[
+										...userFavoritesDocs.docs,
+										...bagItemDocs.docs,
+										...orderDocs.docs,
+										...restaurantItemsDocs.docs,
+										restaurantDoc,
+									].map((doc) => deleteDoc(doc.ref))
 								)
 								//Delete restaurant folder in firebase storage
 								await deleteStorageFolder(storage, `restaurants/${restaurant.uid}`)
@@ -142,7 +163,10 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 								} else {
 									const newDoc = doc(collection(firestore, 'restaurants'))
 									await setDoc(newDoc, { ...restaurant, uid: newDoc.id } as RestaurantModel)
-									await setDoc(doc(firestore, 'admin', 'admins'), { ...admins, [newDoc.id]: [userData?.uid] })
+									await setDoc(doc(firestore, 'admin', 'admins'), {
+										...admins,
+										[newDoc.id]: [userData?.uid],
+									})
 									router.push(`/restaurants/${newDoc.id}`, 'back')
 								}
 							}}
@@ -154,8 +178,9 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 			</IonHeader>
 			<IonContent>
 				<IonList>
-					<IonItemDivider>Name:</IonItemDivider>
+					<IonItemDivider>General Info</IonItemDivider>
 					<IonItem>
+						<IonLabel position='stacked'>Name</IonLabel>
 						<IonInput
 							value={restaurant.name}
 							onIonChange={(e) =>
@@ -166,8 +191,8 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 							}
 						/>
 					</IonItem>
-					<IonItemDivider>Description:</IonItemDivider>
 					<IonItem>
+						<IonLabel position='stacked'>Description</IonLabel>
 						<IonTextarea
 							autoGrow
 							value={restaurant.description}
@@ -247,12 +272,21 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 							checked={restaurant.manuallyClosed}
 							onIonChange={(e) => setRestaurant({ ...restaurant, manuallyClosed: e.detail.checked })}
 						/>
-						<IonLabel>Closed? (Restaurant will {restaurant.manuallyClosed ? '' : 'not'} be displayed as closed to users)</IonLabel>
+						<IonLabel>
+							Closed? (Restaurant will {restaurant.manuallyClosed ? '' : 'not'} be displayed as closed to
+							users)
+						</IonLabel>
 					</IonItem>
 					<IonItemDivider>Active</IonItemDivider>
 					<IonItem>
-						<IonCheckbox slot='start' checked={restaurant.active} onIonChange={(e) => setRestaurant({ ...restaurant, active: e.detail.checked })} />
-						<IonLabel>Active? (Restaurant will {restaurant.active ? '' : 'not'} be displayed to users)</IonLabel>
+						<IonCheckbox
+							slot='start'
+							checked={restaurant.active}
+							onIonChange={(e) => setRestaurant({ ...restaurant, active: e.detail.checked })}
+						/>
+						<IonLabel>
+							Active? (Restaurant will {restaurant.active ? '' : 'not'} be displayed to users)
+						</IonLabel>
 					</IonItem>
 					{!!restaurant.uid && isAdmin(admins, userData) && (
 						<>
@@ -260,8 +294,9 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 							<IonItem
 								detail
 								button
-								onClick={() =>
+								onClick={(e) =>
 									showDeletePopover({
+										event: e.nativeEvent,
 										showBackdrop: true,
 										onDidDismiss: () => setDeleteRestaurantText(''),
 									})

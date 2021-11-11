@@ -1,9 +1,12 @@
-import * as functions from "firebase-functions";
+import { firestore, initializeApp } from 'firebase-admin'
+import * as functions from 'firebase-functions'
 
-// // Start writing Firebase Functions
-// // https://firebase.google.com/docs/functions/typescript
-//
-// export const helloWorld = functions.https.onRequest((request, response) => {
-//   functions.logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+initializeApp()
+
+export const updateKHMenu = functions.database.ref('/khMenu').onWrite((snapshot) =>
+	firestore()
+		.doc('/mfsd/khMenu')
+		.set(snapshot.after.val())
+		.then((result) => console.log(result))
+		.catch((err) => console.error(err))
+)

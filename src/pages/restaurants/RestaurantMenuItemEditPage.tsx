@@ -21,13 +21,13 @@ import {
 	IonTextarea,
 	IonTitle,
 	IonToolbar,
-	useIonLoading,
 	useIonRouter,
 } from '@ionic/react'
 import { doc, getDocs } from 'firebase/firestore'
 import { addOutline, checkmarkOutline, removeOutline } from 'ionicons/icons'
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
+import ImgOrVid from '../../components/ImgOrVid'
 import {
 	RestaurantItemIngredientModel,
 	RestaurantItemModel,
@@ -67,14 +67,20 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 	)
 
 	const [imgFiles, setImgFiles] = useState<File[]>([])
-	const [showLoading, hideLoading] = useIonLoading()
 
 	useEffect(() => {
 		if (restaurant?.uid) {
 			setRestaurantItem({ ...restaurantItem, restaurantUid: restaurant.uid })
-			listAll(ref(storage, `restaurants/${restaurant.uid}/items/${restaurantItem.uid}/pictures`)).then(async (fileList) => {
+			listAll(ref(storage, `restaurants/${restaurant.uid}/items/${restaurantItem.uid}/media`)).then(async (fileList) => {
 				setImgFiles(
-					await Promise.all(fileList.items.map(async (item) => new File([await (await fetch(await getDownloadURL(item))).blob()], item.name)))
+					await Promise.all(
+						fileList.items.map(
+							async (item) =>
+								new File([await (await fetch(await getDownloadURL(item))).blob()], item.name, {
+									type: item.name.includes('-vid') ? 'video/mp4' : undefined,
+								})
+						)
+					)
 				)
 			})
 		}
@@ -121,12 +127,14 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 									)
 
 									//update images in firebase storage
-									await deleteStorageFolder(storage, `restaurants/${restaurant.uid}/items/${restaurantItem.uid}/pictures`)
+									await deleteStorageFolder(storage, `restaurants/${restaurant.uid}/items/${restaurantItem.uid}/media`)
 									await Promise.all(
 										imgFiles.map(async (imgFile, i) => {
 											const imgLocRef = ref(
 												storage,
-												`restaurants/${restaurant.uid}/items/${restaurantItem.uid}/pictures/${restaurantItem.uid}-${i}`
+												`restaurants/${restaurant.uid}/items/${restaurantItem.uid}/media/${restaurantItem.uid}-${
+													i + (imgFile.type === 'video/mp4' ? '-vid' : '')
+												}`
 											)
 											await uploadBytes(imgLocRef, imgFile)
 										})
@@ -138,7 +146,7 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 									//Add images to firebase storage
 									await Promise.all(
 										imgFiles.map(async (imgFile, i) => {
-											const imgLocRef = ref(storage, `restaurants/${restaurant.uid}/items/${newDoc.id}/pictures/${newDoc.id}-${i}`)
+											const imgLocRef = ref(storage, `restaurants/${restaurant.uid}/items/${newDoc.id}/media/${newDoc.id}-${i}`)
 											await uploadBytes(imgLocRef, imgFile)
 										})
 									)
@@ -154,16 +162,17 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 			</IonHeader>
 			<IonContent>
 				<IonList>
-					<IonItemDivider>Name:</IonItemDivider>
+					<IonItemDivider>General Info</IonItemDivider>
 					<IonItem>
+						<IonLabel position='stacked'>Name</IonLabel>
 						<IonInput
 							placeholder='Name'
 							value={restaurantItem.name}
 							onIonChange={(e) => setRestaurantItem({ ...restaurantItem, name: e.detail.value ?? '' })}
 						/>
 					</IonItem>
-					<IonItemDivider>Description:</IonItemDivider>
 					<IonItem>
+						<IonLabel position='stacked'>Description</IonLabel>
 						<IonTextarea
 							autoGrow
 							placeholder='Description'
@@ -171,19 +180,20 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 							onIonChange={(e) => setRestaurantItem({ ...restaurantItem, description: e.detail.value ?? '' })}
 						/>
 					</IonItem>
-					<IonItemDivider>Category:</IonItemDivider>
 					<IonItem>
+						<IonLabel position='stacked'>Category</IonLabel>
 						<IonInput
 							placeholder='Category'
 							value={restaurantItem.category}
 							onIonChange={(e) => setRestaurantItem({ ...restaurantItem, category: e.detail.value ?? '' })}
 						/>
 					</IonItem>
-					<IonItemDivider>Price:</IonItemDivider>
+
 					<IonItem>
-						<IonLabel>$</IonLabel>
+						<IonLabel position='stacked'>Price</IonLabel>
 						<IonInput
 							placeholder='Price'
+							prefix='$'
 							value={restaurantItem.price}
 							type='number'
 							min='0'
@@ -196,8 +206,9 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 							}}
 						/>
 					</IonItem>
-					<IonItemDivider>Approximate Minutes to Ready:</IonItemDivider>
+
 					<IonItem>
+						<IonLabel position='stacked'>Approximate Minutes to Ready</IonLabel>
 						<IonInput
 							placeholder='Minutes to Ready'
 							value={restaurantItem.minutesToReady}
@@ -214,10 +225,10 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 					</IonItem>
 					{restaurant.locations.length > 0 && (
 						<>
-							<IonItemDivider>Locations</IonItemDivider>
 							{restaurant.locations.map((location, i) => {
 								return (
 									<IonItem key={i}>
+										<IonLabel position='stacked'>Locations</IonLabel>
 										<IonCheckbox
 											slot='start'
 											checked={restaurantItem.locationUids.includes(location.uid)}
@@ -236,7 +247,7 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 							})}
 						</>
 					)}
-					<IonItemDivider>Ingredients:</IonItemDivider>
+					<IonItemDivider>Ingredients</IonItemDivider>
 					<IonReorderGroup
 						disabled={false}
 						onIonItemReorder={(e) => {
@@ -273,7 +284,10 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 												return
 											}
 											if (!e.detail.value) {
-												setRestaurantItem({ ...restaurantItem, ingredients: restaurantItem.ingredients.removeIndex(i) })
+												setRestaurantItem({
+													...restaurantItem,
+													ingredients: restaurantItem.ingredients.removeIndex(i),
+												})
 												return
 											}
 											restaurantItem.ingredients[i] = newIngredient
@@ -305,14 +319,19 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 															return
 														}
 														restaurantItem.ingredients[i] = newIngredient
-														setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+														setRestaurantItem((restaurantItem) => ({
+															...restaurantItem,
+														}))
 													}}
 												/>
 											</div>
 											<IonButtons slot='end'>
 												<IonButton
 													onClick={() =>
-														setRestaurantItem({ ...restaurantItem, ingredients: restaurantItem.ingredients.removeIndex(i) })
+														setRestaurantItem({
+															...restaurantItem,
+															ingredients: restaurantItem.ingredients.removeIndex(i),
+														})
 													}
 												>
 													<IonIcon slot='icon-only' icon={isNewIngredient ? addOutline : removeOutline} />
@@ -348,16 +367,23 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 														if (!option.name && !e.detail.value) return
 														const newOption = { ...option, name: e.detail.value ?? '' }
 														if (isNewOption) {
-															setRestaurantItem({ ...restaurantItem, options: restaurantItem.options.concat(newOption) })
+															setRestaurantItem({
+																...restaurantItem,
+																options: restaurantItem.options.concat(newOption),
+															})
 															return
 														}
 														if (!e.detail.value) {
 															restaurantItem.options = restaurantItem.options.removeIndex(i)
-															setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+															setRestaurantItem((restaurantItem) => ({
+																...restaurantItem,
+															}))
 															return
 														}
 														restaurantItem.options[i] = newOption
-														setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+														setRestaurantItem((restaurantItem) => ({
+															...restaurantItem,
+														}))
 													}}
 												/>
 												{!isNewOption && (
@@ -365,7 +391,10 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 														<IonButtons slot='end'>
 															<IonButton
 																onClick={() =>
-																	setRestaurantItem({ ...restaurantItem, options: restaurantItem.options.removeIndex(i) })
+																	setRestaurantItem({
+																		...restaurantItem,
+																		options: restaurantItem.options.removeIndex(i),
+																	})
 																}
 															>
 																<IonIcon slot='icon-only' icon={removeOutline} />
@@ -408,13 +437,18 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 																							option.selectable = option.selectable.map(
 																								(select, k) =>
 																									(k === j
-																										? { ...select, selected: true }
+																										? {
+																												...select,
+																												selected: true,
+																										  }
 																										: {
 																												...select,
 																												selected: false,
 																										  }) as RestaurantItemOptionSelectableModel
 																							)
-																						setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+																						setRestaurantItem((restaurantItem) => ({
+																							...restaurantItem,
+																						}))
 																					}}
 																					slot='start'
 																					value={j}
@@ -425,25 +459,39 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 																				value={select.name}
 																				onIonChange={(e) => {
 																					if (!select.name && !e.detail.value) return
-																					const newSelect = { ...select, name: e.detail.value ?? '' }
+																					const newSelect = {
+																						...select,
+																						name: e.detail.value ?? '',
+																					}
 																					if (isNewSelect) {
 																						option.selectable = option.selectable.concat(newSelect)
-																						setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+																						setRestaurantItem((restaurantItem) => ({
+																							...restaurantItem,
+																						}))
 																						return
 																					}
 																					if (!e.detail.value) {
 																						option.selectable = option.selectable.removeIndex(j)
-																						setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+																						setRestaurantItem((restaurantItem) => ({
+																							...restaurantItem,
+																						}))
 																						return
 																					}
 																					option.selectable[j] = newSelect
-																					setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+																					setRestaurantItem((restaurantItem) => ({
+																						...restaurantItem,
+																					}))
 																				}}
 																			/>
 																			{!isNewSelect && (
 																				<>
 																					<IonLabel>$</IonLabel>
-																					<div style={{ float: 'right', width: '50px' }}>
+																					<div
+																						style={{
+																							float: 'right',
+																							width: '50px',
+																						}}
+																					>
 																						<IonInput
 																							placeholder='0'
 																							type='number'
@@ -466,7 +514,9 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 																									return
 																								}
 																								restaurantItem.options[i].selectable[j] = newSelect
-																								setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+																								setRestaurantItem((restaurantItem) => ({
+																									...restaurantItem,
+																								}))
 																							}}
 																						/>
 																					</div>
@@ -474,7 +524,9 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 																						<IonButton
 																							onClick={() => {
 																								option.selectable = option.selectable.removeIndex(j)
-																								setRestaurantItem((restaurantItem) => ({ ...restaurantItem }))
+																								setRestaurantItem((restaurantItem) => ({
+																									...restaurantItem,
+																								}))
 																							}}
 																						>
 																							<IonIcon slot='icon-only' icon={removeOutline} />
@@ -501,7 +553,7 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 					<IonItem>
 						<input
 							type='file'
-							accept='.jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*'
+							accept='.jpg, .jpeg, .mp4'
 							multiple
 							onChange={(e) => setImgFiles(imgFiles.concat(Array.from(e.target.files ?? [])))}
 						/>
@@ -520,7 +572,7 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 						>
 							{[...Array.from(imgFiles)].map((imgFile, i) => (
 								<IonItem key={i}>
-									<img style={{ maxWidth: 250 }} src={URL.createObjectURL(imgFile)} />
+									<ImgOrVid file={imgFile} style={{ maxWidth: 250 }} controls />
 									<IonButtons slot='end'>
 										<IonButton onClick={() => setImgFiles(imgFiles.removeIndex(i))}>
 											<IonIcon slot='icon-only' icon={removeOutline} />

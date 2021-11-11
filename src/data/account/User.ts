@@ -19,5 +19,5 @@ export const setUserData = async (appContext: AppContextType) => {
 	} else console.error("User isn't logged in; cannot set user data document.")
 }
 
-export const isAdmin = (admins: AdminsModel, userData?: UserDataModel, dept: string = uuidv4()) =>
-	userData && (admins?.all.includes(userData.uid) || admins?.depts[dept]?.includes(userData.uid))
+export const isAdmin = (admins?: AdminsModel, userData?: UserDataModel, dept: string = uuidv4()) =>
+	admins && userData && (admins?.all.includes(userData.uid) || admins?.depts[dept]?.includes(userData.uid))

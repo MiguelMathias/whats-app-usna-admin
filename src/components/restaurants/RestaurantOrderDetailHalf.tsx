@@ -10,7 +10,6 @@ import {
 	IonItemDivider,
 	IonLabel,
 	IonList,
-	IonPage,
 	IonRadio,
 	IonRadioGroup,
 	IonTitle,
@@ -36,7 +35,7 @@ const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ s
 	return (
 		<div className='ordersView'>
 			{selectedOrderIndex >= 0 && (
-				<IonPage>
+				<>
 					<IonHeader>
 						<IonToolbar>
 							<IonTitle slot='start'>Order: ${orderTotalPrice(order)}</IonTitle>
@@ -157,7 +156,7 @@ const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ s
 							))}
 						</IonList>
 					</IonContent>
-				</IonPage>
+				</>
 			)}
 		</div>
 	)
