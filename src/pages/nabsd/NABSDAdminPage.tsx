@@ -1,4 +1,4 @@
-import { IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, IonToolbar } from '@ionic/react'
+import { IonContent, IonHeader, IonItem, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar } from '@ionic/react'
 
 const NABSDAdminPage: React.FC = () => {
 	return (
@@ -9,7 +9,13 @@ const NABSDAdminPage: React.FC = () => {
 					<IonTitle>NABSD</IonTitle>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent></IonContent>
+			<IonContent>
+				<IonList>
+					<IonItem button detail routerLink='/nabsd/updates'>
+						Updates
+					</IonItem>
+				</IonList>
+			</IonContent>
 		</IonPage>
 	)
 }

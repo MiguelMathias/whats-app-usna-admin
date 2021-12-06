@@ -16,7 +16,7 @@ import {
 } from '@ionic/react'
 import { addOutline, checkmarkOutline, createOutline, removeOutline } from 'ionicons/icons'
 import React, { useEffect, useState } from 'react'
-import { allCategories, RestaurantItemModel, RestaurantModel } from '../../data/restaurants/Restaurant'
+import { allCategories, RestaurantBagItemModel, RestaurantModel } from '../../data/restaurants/Restaurant'
 import { deleteStorageFolder, firestore, storage } from '../../Firebase'
 import { useGetRestaurant } from '../../util/hooks'
 import { capitalize, encodeB64Url } from '../../util/misc'
@@ -28,13 +28,13 @@ type RestaurantMenuEditPageProps = {
 
 const RestaurantMenuEditPage: React.FC<RestaurantMenuEditPageProps> = ({ restaurants }) => {
 	const [restaurant, _] = useGetRestaurant(restaurants)
-	const [restaurantItems, setRestaurantItems] = useState<RestaurantItemModel[]>([])
+	const [restaurantBagItems, setRestaurantBagItems] = useState<RestaurantBagItemModel[]>([])
 	const [editMode, setEditMode] = useState(false)
 
 	useEffect(() => {
 		if (restaurant)
 			onSnapshot(collection(firestore, 'restaurants', restaurant.uid, 'items'), (snapshot) =>
-				setRestaurantItems(snapshot.docs.map((doc) => doc.data() as RestaurantItemModel))
+				setRestaurantBagItems(snapshot.docs.map((doc) => doc.data() as RestaurantBagItemModel))
 			)
 	}, [restaurant?.uid])
 
@@ -60,15 +60,17 @@ const RestaurantMenuEditPage: React.FC<RestaurantMenuEditPageProps> = ({ restaur
 			</IonHeader>
 			<IonContent>
 				<IonList>
-					{allCategories(restaurantItems)?.map((category, i) => (
+					{allCategories(restaurantBagItems)?.map((category, i) => (
 						<React.Fragment key={i}>
 							<IonItemDivider>{category}</IonItemDivider>
-							{restaurantItems
-								.filter((restaurantItem) => restaurantItem.category === category)
-								.map((restaurantItem, i) => (
+							{restaurantBagItems
+								.filter((restaurantBagItem) => restaurantBagItem.restaurantItem.category === category)
+								.map((restaurantBagItem, i) => (
 									<IonItem
 										detail={!editMode}
-										routerLink={editMode ? undefined : `/restaurants/${restaurant.uid}/menu/${encodeB64Url(restaurantItem)}`}
+										routerLink={
+											editMode ? undefined : `/restaurants/${restaurant.uid}/menu/${encodeB64Url(restaurantBagItem.restaurantItem)}`
+										}
 										key={i}
 									>
 										{editMode && (
@@ -80,21 +82,24 @@ const RestaurantMenuEditPage: React.FC<RestaurantMenuEditPageProps> = ({ restaur
 															'restaurants',
 															restaurant.uid,
 															'items',
-															restaurantItem.uid
+															restaurantBagItem.uid
 														)
 														const favoriteItemsToDelete = await Promise.all(
 															(
 																await getDocs(
 																	query(
 																		collectionGroup(firestore, 'favorites'),
-																		where('restaurantItem.uid', '==', restaurantItem.uid)
+																		where('restaurantItem.uid', '==', restaurantBagItem.uid)
 																	)
 																)
 															).docs
 														)
 														const bagItemsToDelete = (
 															await getDocs(
-																query(collectionGroup(firestore, 'bag'), where('restaurantItem.uid', '==', restaurantItem.uid))
+																query(
+																	collectionGroup(firestore, 'bag'),
+																	where('restaurantItem.uid', '==', restaurantBagItem.uid)
+																)
 															)
 														).docs
 														await Promise.all(
@@ -104,16 +109,19 @@ const RestaurantMenuEditPage: React.FC<RestaurantMenuEditPageProps> = ({ restaur
 																.concat(restaurantItemToDelete)
 																.map(deleteDoc)
 														)
-														console.log('Deleted all restaurant items of name ' + restaurantItem.name)
+														console.log('Deleted all restaurant items of name ' + restaurantBagItem.restaurantItem.name)
 														//Delete item folder from firebase storage
-														await deleteStorageFolder(storage, `restaurants/${restaurant.uid}/items/${restaurantItem.uid}`)
+														await deleteStorageFolder(
+															storage,
+															`restaurants/${restaurant.uid}/items/${restaurantBagItem.restaurantItem.uid}`
+														)
 													}}
 												>
 													<IonIcon slot='icon-only' icon={removeOutline} />
 												</IonButton>
 											</IonButtons>
 										)}
-										<IonLabel>{restaurantItem.name}</IonLabel>
+										<IonLabel>{restaurantBagItem.restaurantItem.name}</IonLabel>
 									</IonItem>
 								))}
 						</React.Fragment>

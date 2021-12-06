@@ -29,6 +29,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import ImgOrVid from '../../components/ImgOrVid'
 import {
+	RestaurantBagItemModel,
 	RestaurantItemIngredientModel,
 	RestaurantItemModel,
 	RestaurantItemOptionModel,
@@ -112,7 +113,7 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 										await getDocs(query(collectionGroup(firestore, 'bag'), where('restaurantItem.uid', '==', restaurantItem.uid)))
 									).docs
 									//Update restaurantItems
-									await setDoc(restaurantItemToUpdate, restaurantItem)
+									await setDoc(restaurantItemToUpdate, { restaurantItem: restaurantItem, note: '', uid: '' } as RestaurantBagItemModel)
 									console.log('Updated restaurant item of name ' + restaurantItem.name, restaurantItemToUpdate)
 
 									//Delete the user bag and favorite items
@@ -141,12 +142,21 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 									)
 								} else {
 									const newDoc = doc(collection(firestore, 'restaurants', restaurant.uid, 'items'))
-									await setDoc(newDoc, { ...restaurantItem, uid: newDoc.id } as RestaurantItemModel)
+									await setDoc(newDoc, {
+										restaurantItem: { ...restaurantItem, uid: newDoc.id } as RestaurantItemModel,
+										note: '',
+										uid: '',
+									} as RestaurantBagItemModel)
 									console.log('Added item to firestore', restaurantItem)
 									//Add images to firebase storage
 									await Promise.all(
 										imgFiles.map(async (imgFile, i) => {
-											const imgLocRef = ref(storage, `restaurants/${restaurant.uid}/items/${newDoc.id}/media/${newDoc.id}-${i}`)
+											const imgLocRef = ref(
+												storage,
+												`restaurants/${restaurant.uid}/items/${newDoc.id}/media/${
+													newDoc.id + (imgFile.type === 'video/mp4' ? '-vid' : '')
+												}-${i}`
+											)
 											await uploadBytes(imgLocRef, imgFile)
 										})
 									)

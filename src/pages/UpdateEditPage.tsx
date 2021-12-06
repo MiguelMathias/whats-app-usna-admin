@@ -1,4 +1,4 @@
-import { collection, doc, serverTimestamp, setDoc } from '@firebase/firestore'
+import { collection, doc, onSnapshot, serverTimestamp, setDoc } from '@firebase/firestore'
 import { getDownloadURL, listAll, ref, uploadBytes } from '@firebase/storage'
 import {
 	IonBackButton,
@@ -24,26 +24,22 @@ import { checkmarkOutline, removeOutline } from 'ionicons/icons'
 import { useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { useEffectOnce } from 'react-use'
-import ImgOrVid from '../../components/ImgOrVid'
-import { UpdatePost } from '../../data/mfsd/MFSD'
-import { deleteStorageFolder, firestore, storage } from '../../Firebase'
+import ImgOrVid from '../components/ImgOrVid'
+import { UpdateModel } from '../data/Update'
+import { deleteStorageFolder, firestore, storage } from '../Firebase'
 
-type MFSDUpdateEditPageProps = {
-	updates: UpdatePost[]
-}
-
-const MFSDUpdateEditPage: React.FC<MFSDUpdateEditPageProps> = ({ updates }) => {
-	const { updateUid } = useParams<{ updateUid: string }>()
-	const adding = updateUid === 'add'
+const UpdateEditPage: React.FC = () => {
+	const { uid, dept } = useParams<{ uid: string; dept: string }>()
+	const adding = uid === 'add'
+	const [update, setUpdate] = useState({ uid: '', dept: dept } as UpdateModel)
 	const [files, setFiles] = useState<File[]>([])
-	const update = adding ? { updateUid: '' } : updates.find((update) => update.updateUid === updateUid)
 	const router = useIonRouter()
 	const titleText = useRef(update?.title)
 	const captionText = useRef(update?.caption)
 
 	useEffectOnce(() => {
 		if (!adding) {
-			listAll(ref(storage, `mfsd/updates/${updateUid}/media`)).then(async (fileList) => {
+			listAll(ref(storage, `updates/${uid}/media`)).then(async (fileList) => {
 				setFiles(
 					await Promise.all(
 						fileList.items.map(
@@ -55,6 +51,12 @@ const MFSDUpdateEditPage: React.FC<MFSDUpdateEditPageProps> = ({ updates }) => {
 					)
 				)
 			})
+			return onSnapshot(doc(firestore, 'updates', uid), (snapshot) => {
+				const newUpdate = snapshot.data() as UpdateModel
+				titleText.current = newUpdate.title
+				captionText.current = newUpdate.caption
+				setUpdate(newUpdate)
+			})
 		}
 	})
 
@@ -63,31 +65,32 @@ const MFSDUpdateEditPage: React.FC<MFSDUpdateEditPageProps> = ({ updates }) => {
 			<IonHeader>
 				<IonToolbar>
 					<IonButtons slot='start'>
-						<IonBackButton defaultHref='/mfsd/updates' />
+						<IonBackButton defaultHref={`/${dept}/updates`} />
 					</IonButtons>
 					<IonTitle>{adding ? 'Add' : 'Edit'} Post</IonTitle>
 					<IonButtons slot='end'>
 						<IonButton
 							onClick={async () => {
-								const docRef = adding ? doc(collection(firestore, 'mfsd')) : doc(firestore, 'mfsd', updateUid)
-								await setDoc(docRef, {
-									...update,
-									updateUid: docRef.id,
-									title: titleText.current ?? '',
-									caption: captionText.current ?? '',
-									posted: !!update?.posted ? update.posted : serverTimestamp(),
-								} as UpdatePost)
-								await deleteStorageFolder(storage, `mfsd/updates/${docRef.id}/media`)
+								const docRef = adding ? doc(collection(firestore, 'updates')) : doc(firestore, 'updates', uid)
+								await deleteStorageFolder(storage, `updates/${docRef.id}/media`)
 								await Promise.all(
 									files.map(async (imgFile, i) => {
 										const locRef = ref(
 											storage,
-											`mfsd/updates/${docRef.id}/media/${docRef.id}-${i + (imgFile.type === 'video/mp4' ? '-vid' : '')}`
+											`updates/${docRef.id}/media/${docRef.id}-${i + (imgFile.type === 'video/mp4' ? '-vid' : '')}`
 										)
 										await uploadBytes(locRef, imgFile)
 									})
 								)
-								router.push('/mfsd/updates', 'back', 'pop')
+								await setDoc(docRef, {
+									...update,
+									uid: docRef.id,
+									dept: dept,
+									title: titleText.current ?? '',
+									caption: captionText.current ?? '',
+									posted: !!update?.posted ? update.posted : serverTimestamp(),
+								} as UpdateModel)
+								router.push(`/${dept}/updates`, 'back', 'pop')
 							}}
 						>
 							<IonIcon icon={checkmarkOutline} slot='icon-only' />
@@ -140,4 +143,4 @@ const MFSDUpdateEditPage: React.FC<MFSDUpdateEditPageProps> = ({ updates }) => {
 	)
 }
 
-export default MFSDUpdateEditPage
+export default UpdateEditPage

@@ -11,16 +11,11 @@ const MFSDAdminPage: React.FC = () => {
 			</IonHeader>
 			<IonContent>
 				<IonList>
-					<IonItem
-						button
-						detail
-						href='https://docs.google.com/spreadsheets/d/12f04LzgmavFpKIj8SB44SKcAcyEe9lLDbY5LNED8d-0'
-						target='_blank'
-					>
+					<IonItem button detail href='https://docs.google.com/spreadsheets/d/12f04LzgmavFpKIj8SB44SKcAcyEe9lLDbY5LNED8d-0' target='_blank'>
 						King Hall Menus
 					</IonItem>
 					<IonItem button detail routerLink='/mfsd/updates'>
-						Updates Blog
+						Updates
 					</IonItem>
 				</IonList>
 			</IonContent>

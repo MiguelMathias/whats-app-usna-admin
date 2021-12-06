@@ -1,22 +1,25 @@
+import { collection, orderBy, query, where } from '@firebase/firestore'
 import { IonBackButton, IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonTitle, IonToolbar } from '@ionic/react'
 import { addOutline } from 'ionicons/icons'
-import { UpdatePost } from '../../data/mfsd/MFSD'
+import { useParams } from 'react-router'
+import { UpdateModel } from '../data/Update'
+import { firestore } from '../Firebase'
+import { useSubCollection } from '../util/hooks'
 
-type MFSDUpdatesPageProps = {
-	updates: UpdatePost[]
-}
+const UpdatesPage: React.FC = () => {
+	const { dept } = useParams<{ dept: string }>()
+	const [updates] = useSubCollection<UpdateModel>(query(collection(firestore, 'updates'), where('dept', '==', dept), orderBy('posted', 'desc')))
 
-const MFSDUpdatesPage: React.FC<MFSDUpdatesPageProps> = ({ updates }) => {
 	return (
 		<IonPage>
 			<IonHeader>
 				<IonToolbar>
 					<IonButtons slot='start'>
-						<IonBackButton defaultHref='/mfsd' />
+						<IonBackButton defaultHref={`/${dept}`} />
 					</IonButtons>
-					<IonTitle>MFSD Updates</IonTitle>
+					<IonTitle>{dept.toUpperCase()} Updates</IonTitle>
 					<IonButtons slot='end'>
-						<IonButton routerLink='/mfsd/updates/add'>
+						<IonButton routerLink={`/${dept}/updates/add`}>
 							<IonIcon slot='icon-only' icon={addOutline} />
 						</IonButton>
 					</IonButtons>
@@ -25,7 +28,7 @@ const MFSDUpdatesPage: React.FC<MFSDUpdatesPageProps> = ({ updates }) => {
 			<IonContent>
 				<IonList>
 					{updates.map((update, i) => (
-						<IonItem key={i} routerLink={`/mfsd/updates/${update.updateUid}`} detail>
+						<IonItem key={i} routerLink={`/${dept}/updates/${update.uid}`} detail>
 							<IonLabel style={{ whitespace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
 								{update.posted?.toDate().toLocaleDateString()}
 								{update.title && ' - '}
@@ -39,4 +42,4 @@ const MFSDUpdatesPage: React.FC<MFSDUpdatesPageProps> = ({ updates }) => {
 	)
 }
 
-export default MFSDUpdatesPage
+export default UpdatesPage

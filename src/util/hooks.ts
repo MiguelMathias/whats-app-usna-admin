@@ -1,4 +1,4 @@
-import { CollectionReference, DocumentData, DocumentReference, onSnapshot, Query } from 'firebase/firestore'
+import { CollectionReference, DocumentData, DocumentReference, onSnapshot, Query, setDoc } from 'firebase/firestore'
 import { Dispatch, SetStateAction, useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { RestaurantModel } from '../data/restaurants/Restaurant'
@@ -10,9 +10,7 @@ export const useForceUpdate = () => {
 	}
 }
 
-export const useGetRestaurant = (
-	restaurants: RestaurantModel[]
-): [RestaurantModel | undefined, Dispatch<SetStateAction<RestaurantModel | undefined>>] => {
+export const useGetRestaurant = (restaurants: RestaurantModel[]): [RestaurantModel | undefined, Dispatch<SetStateAction<RestaurantModel | undefined>>] => {
 	const { restaurantUid } = useParams<{ restaurantUid: string }>()
 	const [restaurant, setRestaurant] = useState(
 		restaurantUid === 'add'
@@ -27,10 +25,7 @@ export const useGetRestaurant = (
 			  } as RestaurantModel)
 			: restaurants.find((restaurant) => restaurant.uid === restaurantUid)
 	)
-	useEffect(
-		() => setRestaurant(restaurants.find((restaurant) => restaurant.uid === restaurantUid)),
-		[restaurantUid, restaurants.length]
-	)
+	useEffect(() => setRestaurant(restaurants.find((restaurant) => restaurant.uid === restaurantUid)), [restaurantUid, restaurants.length])
 
 	return [restaurant, setRestaurant]
 }
@@ -38,10 +33,10 @@ export const useGetRestaurant = (
 export const useSubDoc = <T>(
 	doc: DocumentReference<DocumentData>,
 	deps: React.DependencyList | undefined = []
-): [T | undefined, React.Dispatch<React.SetStateAction<T | undefined>>] => {
+): [T | undefined, React.Dispatch<React.SetStateAction<T | undefined>>, (data: T) => Promise<void>] => {
 	const [docData, setDocData] = useState<T>()
 	useEffect(() => onSnapshot(doc, (snapshot) => setDocData(snapshot.data() as T)), deps)
-	return [docData, setDocData]
+	return [docData, setDocData, (data: T) => setDoc(doc, data)]
 }
 
 export const useSubCollection = <T>(
@@ -49,9 +44,6 @@ export const useSubCollection = <T>(
 	deps: React.DependencyList | undefined = []
 ): [T[], React.Dispatch<React.SetStateAction<T[]>>] => {
 	const [collectionData, setCollectionData] = useState<T[]>([])
-	useEffect(
-		() => onSnapshot(collection, (snapshot) => setCollectionData(snapshot.docs.map((doc) => doc.data() as T))),
-		deps
-	)
+	useEffect(() => onSnapshot(collection, (snapshot) => setCollectionData(snapshot.docs.map((doc) => doc.data() as T))), deps)
 	return [collectionData, setCollectionData]
 }

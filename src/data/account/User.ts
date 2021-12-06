@@ -6,6 +6,8 @@ import { MapStringType } from '../../util/misc'
 
 export type UserDataModel = {
 	uid: string
+	deviceTokens?: string[]
+	subbedTopics?: string[]
 }
 
 export type AdminsModel = {
