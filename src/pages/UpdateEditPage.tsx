@@ -35,6 +35,7 @@ const UpdateEditPage: React.FC = () => {
 	const [files, setFiles] = useState<File[]>([])
 	const router = useIonRouter()
 	const titleText = useRef(update?.title)
+	const categoryText = useRef(update?.category)
 	const captionText = useRef(update?.caption)
 
 	useEffectOnce(() => {
@@ -54,6 +55,7 @@ const UpdateEditPage: React.FC = () => {
 			return onSnapshot(doc(firestore, 'updates', uid), (snapshot) => {
 				const newUpdate = snapshot.data() as UpdateModel
 				titleText.current = newUpdate.title
+				categoryText.current = newUpdate.category
 				captionText.current = newUpdate.caption
 				setUpdate(newUpdate)
 			})
@@ -87,6 +89,7 @@ const UpdateEditPage: React.FC = () => {
 									uid: docRef.id,
 									dept: dept,
 									title: titleText.current ?? '',
+									category: categoryText.current ?? '',
 									caption: captionText.current ?? '',
 									posted: !!update?.posted ? update.posted : serverTimestamp(),
 								} as UpdateModel)
@@ -103,6 +106,10 @@ const UpdateEditPage: React.FC = () => {
 					<IonItem>
 						<IonLabel position='stacked'>Title</IonLabel>
 						<IonInput value={titleText.current} onIonChange={(e) => (titleText.current = e.detail.value ?? '')} />
+					</IonItem>
+					<IonItem>
+						<IonLabel position='stacked'>Category</IonLabel>
+						<IonTextarea autoGrow value={categoryText.current} onIonChange={(e) => (categoryText.current = e.detail.value ?? '')} />
 					</IonItem>
 					<IonItem>
 						<IonLabel position='stacked'>Caption</IonLabel>
