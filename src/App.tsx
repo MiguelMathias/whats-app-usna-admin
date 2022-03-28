@@ -46,9 +46,7 @@ const App: React.FC = () => {
 	const [user, setUser] = useState<User | undefined>(undefined)
 	const [userData, setUserData] = useState<UserDataModel | undefined>(undefined)
 	const [restaurants] = useSubCollection<RestaurantModel>(collection(firestore, 'restaurants'))
-	const [admins, setAdmins] = useSubDoc<AdminsModel>(doc(firestore, 'admin', 'admins'), [], (snapshot) => {
-		const newAdmins = snapshot.data() as AdminsModel
-	})
+	const [admins, setAdmins] = useSubDoc<AdminsModel>(doc(firestore, 'admin', 'admins'), [], (snapshot) => setAdmins(snapshot.data() as AdminsModel))
 	const [showBadAccountToast, _] = useIonToast()
 
 	const filteredRestaurants = () => restaurants.filter((restaurant) => isAdmin(admins, user, restaurant.uid))
