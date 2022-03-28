@@ -25,6 +25,7 @@ import { auth, firestore } from './Firebase'
 import Account from './pages/account/Account'
 import ManageAdminsPage from './pages/account/ManageAdminsPage'
 import MFSDAdminPage from './pages/mfsd/MFSDAdminPage'
+import MIDSAdminPage from './pages/mids/MIDSAdminPage'
 import MWFAdminPage from './pages/mwf/MWFAdminPage'
 import NABSDAdminPage from './pages/nabsd/NABSDAdminPage'
 import RestaurantHomePage from './pages/restaurants/RestaurantHomePage'
@@ -32,6 +33,9 @@ import RestaurantInfoPage from './pages/restaurants/RestaurantInfoPage'
 import RestaurantMenuEditPage from './pages/restaurants/RestaurantMenuEditPage'
 import RestaurantMenuItemEditPage from './pages/restaurants/RestaurantMenuItemEditPage'
 import RestaurantOrdersPage from './pages/restaurants/RestaurantOrdersPage'
+import TrackerEditPage from './pages/TrackerEditPage'
+import TrackersPage from './pages/TrackersPage'
+import TrackerTrackPage from './pages/TrackerTrackPage'
 import UpdateEditPage from './pages/UpdateEditPage'
 import UpdatesPage from './pages/UpdatesPage'
 /* Theme variables */
@@ -42,10 +46,12 @@ const App: React.FC = () => {
 	const [user, setUser] = useState<User | undefined>(undefined)
 	const [userData, setUserData] = useState<UserDataModel | undefined>(undefined)
 	const [restaurants] = useSubCollection<RestaurantModel>(collection(firestore, 'restaurants'))
-	const [admins, setAdmins] = useSubDoc<AdminsModel>(doc(firestore, 'admin', 'admins'))
+	const [admins, setAdmins] = useSubDoc<AdminsModel>(doc(firestore, 'admin', 'admins'), [], (snapshot) => {
+		const newAdmins = snapshot.data() as AdminsModel
+	})
 	const [showBadAccountToast, _] = useIonToast()
 
-	const filteredRestaurants = () => restaurants.filter((restaurant) => isAdmin(admins, userData, restaurant.uid))
+	const filteredRestaurants = () => restaurants.filter((restaurant) => isAdmin(admins, user, restaurant.uid))
 
 	const appContextProviderValue = {
 		user,
@@ -66,7 +72,8 @@ const App: React.FC = () => {
 				} else
 					setDoc(doc(firestore, 'users', user.uid), {
 						uid: user.uid,
-						bagItems: [],
+						email: user.email ?? '',
+						displayName: user.displayName ?? '',
 					} as UserDataModel)
 			})
 
@@ -115,22 +122,34 @@ const App: React.FC = () => {
 								<Account />
 							</Route>
 							<Route exact path='/manage-admins'>
-								{isAdmin(admins, userData) ? <ManageAdminsPage restaurants={restaurants} /> : <></>}
+								{isAdmin(admins, user) ? <ManageAdminsPage restaurants={restaurants} /> : <></>}
 							</Route>
 							<Route exact path='/mfsd'>
-								{isAdmin(admins, userData, 'mfsd') ? <MFSDAdminPage /> : <></>}
+								{isAdmin(admins, user, 'mfsd') ? <MFSDAdminPage /> : <></>}
 							</Route>
 							<Route exact path='/mwf'>
-								{isAdmin(admins, userData, 'mwf') ? <MWFAdminPage /> : <></>}
+								{isAdmin(admins, user, 'mwf') ? <MWFAdminPage /> : <></>}
 							</Route>
 							<Route exact path='/nabsd'>
-								{isAdmin(admins, userData, 'nabsd') ? <NABSDAdminPage /> : <></>}
+								{isAdmin(admins, user, 'nabsd') ? <NABSDAdminPage /> : <></>}
+							</Route>
+							<Route exact path='/mids'>
+								{isAdmin(admins, user, 'mids') ? <MIDSAdminPage /> : <></>}
 							</Route>
 							<Route exact path='/:dept/updates'>
 								<UpdatesPage />
 							</Route>
 							<Route exact path='/:dept/updates/:uid'>
 								<UpdateEditPage />
+							</Route>
+							<Route exact path='/:dept/trackers'>
+								<TrackersPage />
+							</Route>
+							<Route exact path='/:dept/trackers/:uid'>
+								<TrackerEditPage />
+							</Route>
+							<Route exact path='/:dept/trackers/track/:uid'>
+								<TrackerTrackPage />
 							</Route>
 							<Route exact path='/'>
 								<Redirect to='/account' />

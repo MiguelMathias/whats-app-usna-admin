@@ -14,6 +14,9 @@ const NABSDAdminPage: React.FC = () => {
 					<IonItem button detail routerLink='/nabsd/updates'>
 						Updates
 					</IonItem>
+					<IonItem button detail routerLink='/nabsd/trackers'>
+						Trackers
+					</IonItem>
 				</IonList>
 			</IonContent>
 		</IonPage>

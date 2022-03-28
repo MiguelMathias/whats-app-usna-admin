@@ -74,15 +74,16 @@ const RestaurantMenuEditPage: React.FC<RestaurantMenuEditPageProps> = ({ restaur
 										key={i}
 									>
 										{editMode && (
-											<IonButtons slot='start'>
+											<IonButtons slot='end'>
 												<IonButton
 													onClick={async () => {
+														console.log(restaurantBagItem)
 														const restaurantItemToDelete = doc(
 															firestore,
 															'restaurants',
 															restaurant.uid,
 															'items',
-															restaurantBagItem.uid
+															restaurantBagItem.restaurantItem.uid
 														)
 														const favoriteItemsToDelete = await Promise.all(
 															(

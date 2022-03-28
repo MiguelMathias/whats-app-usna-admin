@@ -1,5 +1,19 @@
 import { setDoc } from '@firebase/firestore'
-import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar } from '@ionic/react'
+import {
+	IonButton,
+	IonButtons,
+	IonContent,
+	IonHeader,
+	IonIcon,
+	IonInput,
+	IonItem,
+	IonItemDivider,
+	IonList,
+	IonMenuButton,
+	IonPage,
+	IonTitle,
+	IonToolbar,
+} from '@ionic/react'
 import { doc } from 'firebase/firestore'
 import { checkmarkOutline, removeOutline } from 'ionicons/icons'
 import { useContext, useEffect, useState } from 'react'
@@ -30,6 +44,7 @@ const ManageAdmins: React.FC<ManageAdminsProps> = ({ restaurants }) => {
 					<IonTitle>Manage Administrators</IonTitle>
 					<IonButtons slot='end'>
 						<IonButton
+							disabled={JSON.stringify(admins) === JSON.stringify(localAdmins)}
 							onClick={() => {
 								setDoc(doc(firestore, 'admin', 'admins'), localAdmins)
 							}}
@@ -48,7 +63,7 @@ const ManageAdmins: React.FC<ManageAdminsProps> = ({ restaurants }) => {
 								return (
 									<IonItem key={i}>
 										<IonInput
-											placeholder='Exact User UID'
+											placeholder='User Email'
 											value={admin}
 											onIonChange={(e) => {
 												if (!admin && !e.detail.value) return
@@ -76,7 +91,8 @@ const ManageAdmins: React.FC<ManageAdminsProps> = ({ restaurants }) => {
 							})}
 						</IonList>
 					</AccordionIonItem>
-					{Object.keys(localAdmins.depts).map((dept, i) => {
+					<IonItemDivider />
+					{Object.keys(localAdmins.depts)?.map((dept, i) => {
 						const deptName = restaurants.find((restaurant) => restaurant.uid === dept)?.name ?? dept.toUpperCase()
 						return (
 							<AccordionIonItem key={i} header={deptName}>
@@ -86,7 +102,7 @@ const ManageAdmins: React.FC<ManageAdminsProps> = ({ restaurants }) => {
 										return (
 											<IonItem key={j}>
 												<IonInput
-													placeholder='Exact User UID'
+													placeholder='User email'
 													value={admin}
 													onIonChange={(e) => {
 														if (!admin && !e.detail.value) return

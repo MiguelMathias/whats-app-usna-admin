@@ -26,7 +26,7 @@ import React, { useContext, useState } from 'react'
 import { useParams } from 'react-router'
 import { v4 as uuidv4 } from 'uuid'
 import { AppContext } from '../../AppContext'
-import { isAdmin } from '../../data/account/User'
+import { AdminsModel, isAdmin } from '../../data/account/User'
 import { RestaurantModel } from '../../data/restaurants/Restaurant'
 import { deleteStorageFolder, firestore, storage } from '../../Firebase'
 import { useGetRestaurant } from '../../util/hooks'
@@ -38,7 +38,7 @@ type RestaurantInfoPageProps = {
 }
 
 const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) => {
-	const { admins, userData } = useContext(AppContext)
+	const { admins, user } = useContext(AppContext)
 	const { restaurantUid } = useParams<{ restaurantUid: string }>()
 	const isAdding = restaurantUid === 'add'
 	const [restaurant, setRestaurant] = useGetRestaurant(restaurants)
@@ -60,11 +60,7 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 				</p>
 			</IonItem>
 			<IonItem>
-				<IonInput
-					placeholder='Restaurant Name'
-					value={deleteRestaurantText}
-					onIonChange={(e) => setDeleteRestaurantText(e.detail.value ?? '')}
-				/>
+				<IonInput placeholder='Restaurant Name' value={deleteRestaurantText} onIonChange={(e) => setDeleteRestaurantText(e.detail.value ?? '')} />
 			</IonItem>
 			<IonToolbar>
 				<IonButtons slot='start'>
@@ -78,40 +74,23 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 							if (restaurant) {
 								//delete all user favorites with restaurant id
 								const userFavoritesDocs = await getDocs(
-									query(
-										collectionGroup(firestore, 'favorites'),
-										where('restaurantUid', '==', restaurant?.uid)
-									)
+									query(collectionGroup(firestore, 'favorites'), where('restaurantUid', '==', restaurant?.uid))
 								)
 								//delete all user bag items with restaurant id
 								const bagItemDocs = await getDocs(
-									query(
-										collectionGroup(firestore, 'bag'),
-										where('restaurantItem.restaurantUid', '==', restaurant?.uid)
-									)
+									query(collectionGroup(firestore, 'bag'), where('restaurantItem.restaurantUid', '==', restaurant?.uid))
 								)
 								//delete all user orders with restaurant id
-								const orderDocs = await getDocs(
-									query(
-										collectionGroup(firestore, 'orders'),
-										where('restaurantUid', '==', restaurant?.uid)
-									)
-								)
+								const orderDocs = await getDocs(query(collectionGroup(firestore, 'orders'), where('restaurantUid', '==', restaurant?.uid)))
 								//delete all restaurant items
-								const restaurantItemsDocs = await getDocs(
-									collection(firestore, 'restaurants', restaurant?.uid, 'items')
-								)
+								const restaurantItemsDocs = await getDocs(collection(firestore, 'restaurants', restaurant?.uid, 'items'))
 								//delete restaurant doc
 								const restaurantDoc = await getDoc(doc(firestore, 'restaurants', restaurant.uid))
 
 								await Promise.all(
-									[
-										...userFavoritesDocs.docs,
-										...bagItemDocs.docs,
-										...orderDocs.docs,
-										...restaurantItemsDocs.docs,
-										restaurantDoc,
-									].map((doc) => deleteDoc(doc.ref))
+									[...userFavoritesDocs.docs, ...bagItemDocs.docs, ...orderDocs.docs, ...restaurantItemsDocs.docs, restaurantDoc].map((doc) =>
+										deleteDoc(doc.ref)
+									)
 								)
 								//Delete restaurant folder in firebase storage
 								await deleteStorageFolder(storage, `restaurants/${restaurant.uid}`)
@@ -163,10 +142,14 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 								} else {
 									const newDoc = doc(collection(firestore, 'restaurants'))
 									await setDoc(newDoc, { ...restaurant, uid: newDoc.id } as RestaurantModel)
-									await setDoc(doc(firestore, 'admin', 'admins'), {
-										...admins,
-										[newDoc.id]: [userData?.uid],
-									})
+									if (user)
+										await setDoc(doc(firestore, 'admin', 'admins'), {
+											...admins,
+											depts: {
+												...admins.depts,
+												[restaurant.name]: [user.email],
+											},
+										} as AdminsModel)
 									router.push(`/restaurants/${newDoc.id}`, 'back')
 								}
 							}}
@@ -272,23 +255,14 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 							checked={restaurant.manuallyClosed}
 							onIonChange={(e) => setRestaurant({ ...restaurant, manuallyClosed: e.detail.checked })}
 						/>
-						<IonLabel>
-							Closed? (Restaurant will {restaurant.manuallyClosed ? '' : 'not'} be displayed as closed to
-							users)
-						</IonLabel>
+						<IonLabel>Closed? (Restaurant will {restaurant.manuallyClosed ? '' : 'not'} be displayed as closed to users)</IonLabel>
 					</IonItem>
 					<IonItemDivider>Active</IonItemDivider>
 					<IonItem>
-						<IonCheckbox
-							slot='start'
-							checked={restaurant.active}
-							onIonChange={(e) => setRestaurant({ ...restaurant, active: e.detail.checked })}
-						/>
-						<IonLabel>
-							Active? (Restaurant will {restaurant.active ? '' : 'not'} be displayed to users)
-						</IonLabel>
+						<IonCheckbox slot='start' checked={restaurant.active} onIonChange={(e) => setRestaurant({ ...restaurant, active: e.detail.checked })} />
+						<IonLabel>Active? (Restaurant will {restaurant.active ? '' : 'not'} be displayed to users)</IonLabel>
 					</IonItem>
-					{!!restaurant.uid && isAdmin(admins, userData) && (
+					{!!restaurant.uid && isAdmin(admins, user) && (
 						<>
 							<IonItemDivider>DANGER</IonItemDivider>
 							<IonItem

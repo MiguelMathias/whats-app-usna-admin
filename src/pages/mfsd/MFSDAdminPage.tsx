@@ -17,6 +17,9 @@ const MFSDAdminPage: React.FC = () => {
 					<IonItem button detail routerLink='/mfsd/updates'>
 						Updates
 					</IonItem>
+					<IonItem button detail routerLink='/mfsd/trackers'>
+						Trackers
+					</IonItem>
 				</IonList>
 			</IonContent>
 		</IonPage>

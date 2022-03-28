@@ -1,15 +1,6 @@
-import { GoogleAuthProvider, signInWithRedirect } from '@firebase/auth'
-import {
-	IonButton,
-	IonButtons,
-	IonContent,
-	IonHeader,
-	IonIcon,
-	IonMenuButton,
-	IonPage,
-	IonTitle,
-	IonToolbar,
-} from '@ionic/react'
+import { GoogleAuthProvider } from '@firebase/auth'
+import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonMenuButton, IonPage, IonTitle, IonToolbar } from '@ionic/react'
+import { signInWithPopup } from 'firebase/auth'
 import { personOutline } from 'ionicons/icons'
 import { auth } from '../../Firebase'
 
@@ -30,7 +21,7 @@ const LogIn: React.FC = () => (
 				<IonIcon icon={personOutline} style={{ fontSize: 64 }} />
 			</div>
 			<div style={{ textAlign: 'center', marginTop: 20 }}>
-				<IonButton onClick={() => signInWithRedirect(auth, provider)}>Google Authentication</IonButton>
+				<IonButton onClick={() => signInWithPopup(auth, provider)}>Google Authentication</IonButton>
 			</div>
 		</IonContent>
 	</IonPage>

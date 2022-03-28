@@ -15,11 +15,15 @@ import {
 	IonPage,
 	IonReorder,
 	IonReorderGroup,
+	IonSelect,
+	IonSelectOption,
 	IonTextarea,
 	IonTitle,
 	IonToolbar,
+	useIonAlert,
 	useIonRouter,
 } from '@ionic/react'
+import { deleteDoc } from 'firebase/firestore'
 import { checkmarkOutline, removeOutline } from 'ionicons/icons'
 import { useRef, useState } from 'react'
 import { useParams } from 'react-router'
@@ -31,12 +35,17 @@ import { deleteStorageFolder, firestore, storage } from '../Firebase'
 const UpdateEditPage: React.FC = () => {
 	const { uid, dept } = useParams<{ uid: string; dept: string }>()
 	const adding = uid === 'add'
-	const [update, setUpdate] = useState({ uid: '', dept: dept } as UpdateModel)
+	const [update, setUpdate] = useState({ uid: '', dept } as UpdateModel)
 	const [files, setFiles] = useState<File[]>([])
 	const router = useIonRouter()
-	const titleText = useRef(update?.title)
-	const categoryText = useRef(update?.category)
-	const captionText = useRef(update?.caption)
+	const titleText = useRef(update.title)
+	const categoryText = useRef(update.category)
+	const captionText = useRef(update.caption)
+	const midshipmenText = useRef('')
+
+	const [showAlert] = useIonAlert()
+	const [filters, setFilters] = useState<string[]>(['all'])
+	const [companies, setCompanies] = useState<string[]>([])
 
 	useEffectOnce(() => {
 		if (!adding) {
@@ -54,9 +63,19 @@ const UpdateEditPage: React.FC = () => {
 			})
 			return onSnapshot(doc(firestore, 'updates', uid), (snapshot) => {
 				const newUpdate = snapshot.data() as UpdateModel
+				if (!newUpdate) return
 				titleText.current = newUpdate.title
 				categoryText.current = newUpdate.category
 				captionText.current = newUpdate.caption
+				const filters = []
+				if (newUpdate.midsAndCos.includes('all') || newUpdate.midsAndCos.length === 0) filters.push('all')
+				if (newUpdate.midsAndCos.find((midOrCo) => midOrCo.length === 2)) filters.push('cos')
+				if (newUpdate.midsAndCos.find((midOrCo) => midOrCo.length == 6)) filters.push('mids')
+				setFilters(filters)
+
+				setCompanies(newUpdate.midsAndCos.filter((midOrCo) => midOrCo.length === 2))
+				midshipmenText.current = newUpdate.midsAndCos.filter((midOrCo) => midOrCo.length === 6).join('\n')
+
 				setUpdate(newUpdate)
 			})
 		}
@@ -71,6 +90,30 @@ const UpdateEditPage: React.FC = () => {
 					</IonButtons>
 					<IonTitle>{adding ? 'Add' : 'Edit'} Post</IonTitle>
 					<IonButtons slot='end'>
+						{!adding && (
+							<IonButton
+								onClick={async () => {
+									showAlert({
+										header: 'Confirm Deletion',
+										message: 'Deleting this Udpate is irreversible.',
+										buttons: [
+											'Cancel',
+											{
+												text: 'Continue',
+												handler: async () => {
+													const docRef = doc(firestore, 'updates', uid)
+													await deleteStorageFolder(storage, `updates/${docRef.id}/media`)
+													await deleteDoc(docRef)
+													router.push(`/${dept}/updates`, 'back', 'pop')
+												},
+											},
+										],
+									})
+								}}
+							>
+								<IonIcon icon={removeOutline} slot='icon-only' />
+							</IonButton>
+						)}
 						<IonButton
 							onClick={async () => {
 								const docRef = adding ? doc(collection(firestore, 'updates')) : doc(firestore, 'updates', uid)
@@ -84,14 +127,18 @@ const UpdateEditPage: React.FC = () => {
 										await uploadBytes(locRef, imgFile)
 									})
 								)
+								const midsAndCos = []
+								if (filters.includes('mids')) midsAndCos.push(...midshipmenText.current.split(/\s*[\s,]\s*/))
+								if (filters.includes('cos')) midsAndCos.push(...companies)
+								if (filters.includes('all')) midsAndCos.push('all')
 								await setDoc(docRef, {
 									...update,
 									uid: docRef.id,
-									dept: dept,
 									title: titleText.current ?? '',
 									category: categoryText.current ?? '',
 									caption: captionText.current ?? '',
-									posted: !!update?.posted ? update.posted : serverTimestamp(),
+									posted: update?.posted ?? serverTimestamp(),
+									midsAndCos,
 								} as UpdateModel)
 								router.push(`/${dept}/updates`, 'back', 'pop')
 							}}
@@ -109,8 +156,32 @@ const UpdateEditPage: React.FC = () => {
 					</IonItem>
 					<IonItem>
 						<IonLabel position='stacked'>Category</IonLabel>
-						<IonTextarea autoGrow value={categoryText.current} onIonChange={(e) => (categoryText.current = e.detail.value ?? '')} />
+						<IonInput value={categoryText.current} onIonChange={(e) => (categoryText.current = e.detail.value ?? '')} />
 					</IonItem>
+					<IonItem>
+						<IonLabel position='stacked'>Send to:</IonLabel>
+						<IonSelect multiple value={filters} onIonChange={(e) => setFilters(e.detail.value)}>
+							<IonSelectOption value='all'>All</IonSelectOption>
+							<IonSelectOption value='cos'>Specific Companies</IonSelectOption>
+							<IonSelectOption value='mids'>Specific Midshipmen</IonSelectOption>
+						</IonSelect>
+					</IonItem>
+					{filters.includes('cos') && (
+						<IonItem>
+							<IonLabel position='stacked'>Companies</IonLabel>
+							<IonSelect multiple value={companies} onIonChange={(e) => setCompanies(e.detail.value)}>
+								{Array.from({ length: 30 }, (x, i) => i).map((i) => (
+									<IonSelectOption key={i}>{i + 1}</IonSelectOption>
+								))}
+							</IonSelect>
+						</IonItem>
+					)}
+					{filters.includes('mids') && (
+						<IonItem>
+							<IonLabel position='stacked'>Midshipmen (Enter Alphas separated by line)</IonLabel>
+							<IonTextarea autoGrow value={midshipmenText.current} onIonChange={(e) => (midshipmenText.current = e.detail.value ?? '')} />
+						</IonItem>
+					)}
 					<IonItem>
 						<IonLabel position='stacked'>Caption</IonLabel>
 						<IonTextarea autoGrow value={captionText.current} onIonChange={(e) => (captionText.current = e.detail.value ?? '')} />

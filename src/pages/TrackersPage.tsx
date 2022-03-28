@@ -1,4 +1,3 @@
-import { collection, orderBy, query, where } from '@firebase/firestore'
 import {
 	IonBackButton,
 	IonButton,
@@ -15,19 +14,21 @@ import {
 	IonTitle,
 	IonToolbar,
 } from '@ionic/react'
-import { addOutline } from 'ionicons/icons'
+import { collection, orderBy, query, where } from 'firebase/firestore'
+import { addOutline, checkmarkOutline, createOutline } from 'ionicons/icons'
 import { useState } from 'react'
 import { useParams } from 'react-router'
-import { UpdateModel } from '../data/Update'
+import { TrackerModel } from '../data/Tracker'
 import { firestore } from '../Firebase'
 import { useSubCollection } from '../util/hooks'
 import { distinct } from '../util/misc'
 
-const UpdatesPage: React.FC = () => {
+const TrackersPage: React.FC = () => {
 	const { dept } = useParams<{ dept: string }>()
-	const [updates] = useSubCollection<UpdateModel>(query(collection(firestore, 'updates'), where('dept', '==', dept), orderBy('posted', 'desc')), [dept])
+	const [trackers] = useSubCollection<TrackerModel>(query(collection(firestore, 'trackers'), where('dept', '==', dept), orderBy('posted', 'desc')), [dept])
+	const [editMode, setEditMode] = useState(false)
 
-	const allCategories = () => updates.map((update) => update.category).filter(distinct)
+	const allCategories = () => trackers.map((tracker) => tracker.category).filter(distinct)
 	const [categories, setCategories] = useState<string[]>([])
 
 	return (
@@ -37,9 +38,12 @@ const UpdatesPage: React.FC = () => {
 					<IonButtons slot='start'>
 						<IonBackButton defaultHref={`/${dept}`} />
 					</IonButtons>
-					<IonTitle>{dept.toUpperCase()} Updates</IonTitle>
+					<IonTitle>{dept.toUpperCase()} Trackers</IonTitle>
 					<IonButtons slot='end'>
-						<IonButton routerLink={`/${dept}/updates/add`}>
+						<IonButton onClick={() => setEditMode((editMode) => !editMode)}>
+							<IonIcon slot='icon-only' icon={editMode ? checkmarkOutline : createOutline} />
+						</IonButton>
+						<IonButton routerLink={`/${dept}/trackers/add`}>
 							<IonIcon slot='icon-only' icon={addOutline} />
 						</IonButton>
 					</IonButtons>
@@ -59,14 +63,19 @@ const UpdatesPage: React.FC = () => {
 					</IonItem>
 				)}
 				<IonList>
-					{updates
+					{trackers
 						.filter((update) => (categories.length > 0 ? categories.includes(update.category ?? '') : true))
-						.map((update, i) => (
-							<IonItem key={i} routerLink={`/${dept}/updates/${update.uid}`} detail>
+						.map((tracker, i) => (
+							<IonItem
+								key={i}
+								button
+								detail={editMode}
+								routerLink={editMode ? `/${dept}/trackers/${tracker.uid}` : `/${dept}/trackers/track/${tracker.uid}`}
+							>
 								<IonLabel style={{ whitespace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-									{update.title}
-									{update.posted && ' - '}
-									{update.posted?.toDate().toLocaleDateString()}
+									{tracker.title}
+									{tracker.posted && ' - '}
+									{tracker.posted?.toDate().toLocaleDateString()}
 								</IonLabel>
 							</IonItem>
 						))}
@@ -76,4 +85,4 @@ const UpdatesPage: React.FC = () => {
 	)
 }
 
-export default UpdatesPage
+export default TrackersPage

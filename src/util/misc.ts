@@ -1,6 +1,6 @@
 import { format } from 'date-fns'
 
-export type MapStringType<V> = { [key: string]: V }
+export type MapString<V> = { [key: string]: V }
 
 export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
@@ -19,6 +19,7 @@ declare global {
 		removeIndex(index: number, item?: T): T[]
 		indexOfValue(elem: T): number
 		insertIndex(index: number, ...items: T[]): T[]
+		filterMap<U>(callbackfn: (value: T, index: number, self: T[], newArr: U[]) => U | undefined): U[]
 	}
 
 	interface Date {
@@ -49,6 +50,19 @@ if (!Array.prototype.indexOfValue)
 if (!Array.prototype.insertIndex)
 	Array.prototype.insertIndex = function <T>(this: T[], index: number, ...items: T[]) {
 		return [...this.slice(0, index), ...items, ...this.slice(index)]
+	}
+
+if (!Array.prototype.filterMap)
+	Array.prototype.filterMap = function <T, U>(this: T[], callbackfn: (value: T, index: number, self: T[], newSelf: U[]) => U | undefined) {
+		const newArr = [] as U[]
+		let i = 0
+		for (const item of this) {
+			const result = callbackfn(item, i, this, newArr)
+			if (result) newArr.push(result)
+
+			i++
+		}
+		return newArr
 	}
 
 if (!Date.prototype.getDateWithoutTime)

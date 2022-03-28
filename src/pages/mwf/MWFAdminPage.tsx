@@ -14,6 +14,9 @@ const MWFAdminPage: React.FC = () => {
 					<IonItem button detail routerLink='/mwf/updates'>
 						Updates
 					</IonItem>
+					<IonItem button detail routerLink='/mwf/trackers'>
+						Trackers
+					</IonItem>
 				</IonList>
 			</IonContent>
 		</IonPage>

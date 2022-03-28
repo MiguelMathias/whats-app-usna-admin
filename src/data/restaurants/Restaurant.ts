@@ -1,6 +1,6 @@
 import { Timestamp } from '@firebase/firestore'
 import { getDay, setHours, setMinutes, setSeconds } from 'date-fns'
-import { daysOfWeek, distinct, MapStringType as StringMap } from '../../util/misc'
+import { daysOfWeek, distinct, MapString as StringMap } from '../../util/misc'
 
 export type RestaurantModel = {
 	name: string
@@ -61,6 +61,16 @@ export type RestaurantOrderModel = {
 	rejected?: Timestamp
 	pickupReady?: Timestamp
 	uid: string
+}
+
+export type StripeProductModel = {
+	name: string
+}
+
+export type StripePriceModel = {
+	product: string
+	unit_amount: number
+	currency: string
 }
 
 export const allCategories = (restaurantItems: RestaurantItemModel[] | RestaurantBagItemModel[]) =>
