@@ -1,10 +1,11 @@
-import { IonContent, IonHeader, IonItem, IonList, IonPage, IonTitle, IonToolbar } from '@ionic/react'
+import { IonContent, IonHeader, IonItem, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar } from '@ionic/react'
 
 const MIDSAdminPage: React.FC = () => {
 	return (
 		<IonPage>
 			<IonHeader>
 				<IonToolbar>
+					<IonMenuButton slot='start' />
 					<IonTitle>Midshipmen</IonTitle>
 				</IonToolbar>
 			</IonHeader>
