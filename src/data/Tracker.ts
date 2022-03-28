@@ -12,6 +12,6 @@ export type TrackerModel = {
 }
 
 export type TrackerItemModel = {
-	alpha: string
+	email: string
 	company?: string
 }

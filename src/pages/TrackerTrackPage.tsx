@@ -44,7 +44,7 @@ const ScannerModalComponent: React.FC<ScannerModalComponentProps> = ({ finishCal
 
 		if (
 			tracker.items.map((item) => JSON.stringify(item)).includes(lastScan.text) &&
-			!(tracker.items.filter((item) => item.alpha === trackerItemScanned.alpha).length < (tracker.maxRecords || 1))
+			!(tracker.items.filter((item) => item.email === trackerItemScanned.email).length < (tracker.maxRecords || 1))
 		)
 			showToast({
 				header: 'Warning',
@@ -54,7 +54,7 @@ const ScannerModalComponent: React.FC<ScannerModalComponentProps> = ({ finishCal
 			})
 		else if (
 			tracker.midsAndCos.includes('all') ||
-			tracker.midsAndCos.includes(trackerItemScanned.alpha) ||
+			tracker.midsAndCos.includes(trackerItemScanned.email) ||
 			(trackerItemScanned.company && tracker.midsAndCos.includes(trackerItemScanned.company))
 		) {
 			/* const recordsSoFar = tracker.items.filter((item) => item.alpha === trackerItemScanned.alpha && item.company === trackerItemScanned.company).length
@@ -139,20 +139,20 @@ const TrackerTrackPage: React.FC = () => {
 				</IonItem>
 				<IonList>
 					{tracker?.items
-						.filter((item) => (searchText ? item.alpha.startsWith(searchText) || item.company?.startsWith(searchText) : true))
+						.filter((item) => (searchText ? item.email.startsWith(searchText) || item.company?.startsWith(searchText) : true))
 						.filterMap((item, _i, self, newSelf: (TrackerItemModel & { count: number })[]) =>
-							newSelf.filter((i) => i.alpha === item.alpha).length
+							newSelf.filter((i) => i.email === item.email).length
 								? undefined
-								: { ...item, count: self.filter((i) => i.alpha === item.alpha).length }
+								: { ...item, count: self.filter((i) => i.email === item.email).length }
 						)
 						.map((item, i) => (
 							<IonItem key={i}>
 								<IonLabel>
-									{item.company} | {item.alpha} | {item.count}
+									{item.company} | {item.email} | {item.count}
 								</IonLabel>
 								<IonButtons slot='end'>
 									<IonButton
-										onClick={() => setTrackerDoc({ ...tracker, items: tracker.items.filter((theItem) => item.alpha !== theItem.alpha) })}
+										onClick={() => setTrackerDoc({ ...tracker, items: tracker.items.filter((theItem) => item.email !== theItem.email) })}
 									>
 										<IonIcon slot='icon-only' icon={removeOutline} />
 									</IonButton>
