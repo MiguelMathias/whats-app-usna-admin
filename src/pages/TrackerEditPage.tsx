@@ -35,7 +35,7 @@ const TrackerEditPage: React.FC = () => {
 	const [companies, setCompanies] = useState<string[]>([])
 
 	const titleText = useRef(tracker.title)
-	const categoryText = useRef(tracker.category)
+	const categoryText = useRef(tracker.category ?? '')
 	const midshipmenText = useRef('')
 	const maxRecords = useRef(1)
 
@@ -49,7 +49,7 @@ const TrackerEditPage: React.FC = () => {
 				const newTracker = snapshot.data() as TrackerModel
 				if (!newTracker) return
 				titleText.current = newTracker.title
-				categoryText.current = newTracker.category
+				categoryText.current = newTracker.category ?? ''
 				maxRecords.current = newTracker.maxRecords ?? 1
 
 				const filters = []
