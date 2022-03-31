@@ -1,17 +1,18 @@
-import { auth, firestore, initializeApp, messaging, storage } from 'firebase-admin'
-import * as functions from 'firebase-functions'
+import admin, { messaging } from 'firebase-admin'
+import { database, firestore } from 'firebase-functions'
 
-initializeApp()
+admin.initializeApp()
 
-export const updateKHMenu = functions.database.ref('/khMenu').onWrite((snapshot) =>
-	firestore()
+export const updateKHMenu = database.ref('/khMenu').onWrite((snapshot) =>
+	admin
+		.firestore()
 		.doc('/mfsd/khMenu')
 		.set(snapshot.after.val())
 		.then((result) => console.log(result))
 		.catch((err) => console.error(err))
 )
 
-export const subUsersToTopics = functions.firestore.document('users/{userDoc}').onWrite(({ before, after }) => {
+export const subUsersToTopics = firestore.document('users/{userDoc}').onWrite(({ before, after }) => {
 	if (!before.exists) return
 	if (!after.exists) return
 
@@ -21,7 +22,7 @@ export const subUsersToTopics = functions.firestore.document('users/{userDoc}').
 
 	const unSubbedTopics = ['mfsd', 'mwf', 'nabsd'].filter((topic) => !subbedTopics?.includes(topic))
 	for (const topic of subbedTopics ?? [])
-		functions.app.admin
+		admin
 			.messaging()
 			.subscribeToTopic(deviceTokens ?? [], topic)
 			.then((val) => {
@@ -31,7 +32,7 @@ export const subUsersToTopics = functions.firestore.document('users/{userDoc}').
 			.catch((err) => console.error(err))
 
 	for (const topic of unSubbedTopics)
-		functions.app.admin
+		admin
 			.messaging()
 			.unsubscribeFromTopic(deviceTokens ?? [], topic)
 			.then((val) => {
@@ -41,12 +42,13 @@ export const subUsersToTopics = functions.firestore.document('users/{userDoc}').
 			.catch((err) => console.error(err))
 })
 
-export const sendUpdateNotif = functions.firestore.document('updates/{updateUid}').onWrite(async ({ after }) => {
+export const sendUpdateNotif = firestore.document('updates/{updateUid}').onWrite(async ({ after }) => {
 	if (!after.exists) return
 	const { uid, dept, title, caption, midsAndCos } = after.data() as { uid: string; dept: string; title: string; caption?: string; midsAndCos: string[] }
 
 	const img = (
-		await storage()
+		await admin
+			.storage()
 			.bucket()
 			.getFiles({ prefix: `updates/${uid}/media` })
 	)[0]
@@ -66,7 +68,8 @@ export const sendUpdateNotif = functions.firestore.document('updates/{updateUid}
 			notification,
 			data,
 		} as messaging.Message
-		messaging()
+		admin
+			.messaging()
 			.send(message)
 			.then((result) => console.log('Sent message', JSON.stringify(message, null, 2), JSON.stringify(result, null, 2)))
 			.catch((err) => console.error(err))
@@ -75,12 +78,25 @@ export const sendUpdateNotif = functions.firestore.document('updates/{updateUid}
 		for (const midOrCo of midsAndCos) {
 			if (/\d\d\d\d\d\d/.test(midOrCo)) {
 				const alpha = midOrCo
-				const { uid } = await auth().getUserByEmail(`m${alpha}@usna.edu`)
-				const { deviceTokens } = (await firestore().doc(`/users/${uid}`).get()).data() as { deviceTokens?: string[] }
+				const { uid } = await admin.auth().getUserByEmail(`m${alpha}@usna.edu`)
+				const { deviceTokens } = (await admin.firestore().doc(`/users/${uid}`).get()).data() as { deviceTokens?: string[] }
 				allDeviceTokens?.push(...(deviceTokens ?? []))
+			} else if (/\d\d\d\d/.test(midOrCo)) {
+				const year = midOrCo.slice(-2)
+				const allUsersOfYear = (await admin.auth().listUsers()).users.filter((user) => user.email?.slice(1, 3) === year)
+				const deviceTokens = (
+					await Promise.all(
+						(await admin.firestore().collection('users').listDocuments())
+							.filter((doc) => allUsersOfYear.map((user) => user.uid).includes(doc.id))
+							.map((doc) => doc.get())
+					)
+				)
+					.map((doc) => (doc.data() as { deviceTokens?: [] }).deviceTokens)
+					.reduce((p, c) => p?.concat(c ?? []), [] as string[])
+				allDeviceTokens.push(...(deviceTokens ?? []))
 			} else if (/\d\d/.test(midOrCo)) {
 				const co = midOrCo
-				const deviceTokens = (await firestore().collection('users').where('midsAndCos', 'array-contains', co).get()).docs
+				const deviceTokens = (await admin.firestore().collection('users').where('midsAndCos', 'array-contains', co).get()).docs
 					.map((doc) => (doc.data() as { deviceTokens?: [] }).deviceTokens)
 					.reduce((p, c) => p?.concat(c ?? []), [] as string[])
 				allDeviceTokens.push(...(deviceTokens ?? []))

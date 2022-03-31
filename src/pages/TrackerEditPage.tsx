@@ -25,6 +25,7 @@ import { useParams } from 'react-router'
 import { useEffectOnce } from 'react-use'
 import { TrackerModel } from '../data/Tracker'
 import { firestore } from '../Firebase'
+import { getAcademicYear, range } from '../util/misc'
 
 const TrackerEditPage: React.FC = () => {
 	const { uid, dept } = useParams<{ uid: string; dept: string }>()
@@ -33,6 +34,7 @@ const TrackerEditPage: React.FC = () => {
 	const [tracker, setTracker] = useState({ uid: '', dept, items: [], title: '', midsAndCos: [] } as TrackerModel)
 	const [filters, setFilters] = useState<string[]>(['all'])
 	const [companies, setCompanies] = useState<string[]>([])
+	const [years, setYears] = useState<string[]>([])
 
 	const titleText = useRef(tracker.title)
 	const categoryText = useRef(tracker.category ?? '')
@@ -55,10 +57,12 @@ const TrackerEditPage: React.FC = () => {
 				const filters = []
 				if (newTracker.midsAndCos.includes('all') || newTracker.midsAndCos.length === 0) filters.push('all')
 				if (newTracker.midsAndCos.find((midOrCo) => midOrCo.length === 2)) filters.push('cos')
+				if (newTracker.midsAndCos.find((midOrCo) => midOrCo.length === 4)) filters.push('yrs')
 				if (newTracker.midsAndCos.find((midOrCo) => midOrCo.length == 6)) filters.push('mids')
 				setFilters(filters)
 
 				setCompanies(newTracker.midsAndCos.filter((midOrCo) => midOrCo.length === 2))
+				setYears(newTracker.midsAndCos.filter((midOrCo) => midOrCo.length === 4))
 				midshipmenText.current = newTracker.midsAndCos.filter((midOrCo) => midOrCo.length === 6).join('\n')
 
 				setTracker(newTracker)
@@ -103,6 +107,7 @@ const TrackerEditPage: React.FC = () => {
 								const midsAndCos = []
 								if (filters.includes('mids')) midsAndCos.push(...midshipmenText.current.split(/\s*[\s,]\s*/))
 								if (filters.includes('cos')) midsAndCos.push(...companies)
+								if (filters.includes('yrs')) midsAndCos.push(...years)
 								if (filters.includes('all')) midsAndCos.push('all')
 								await setDoc(docRef, {
 									...tracker,
@@ -145,6 +150,7 @@ const TrackerEditPage: React.FC = () => {
 						<IonSelect multiple value={filters} onIonChange={(e) => setFilters(e.detail.value)}>
 							<IonSelectOption value='all'>All</IonSelectOption>
 							<IonSelectOption value='cos'>Specific Companies</IonSelectOption>
+							<IonSelectOption value='yrs'>Specific Classes</IonSelectOption>
 							<IonSelectOption value='mids'>Specific Midshipmen</IonSelectOption>
 						</IonSelect>
 					</IonItem>
@@ -154,6 +160,16 @@ const TrackerEditPage: React.FC = () => {
 							<IonSelect multiple value={companies} onIonChange={(e) => setCompanies(e.detail.value)}>
 								{Array.from({ length: 30 }, (x, i) => i).map((i) => (
 									<IonSelectOption key={i}>{i + 1}</IonSelectOption>
+								))}
+							</IonSelect>
+						</IonItem>
+					)}
+					{filters.includes('yrs') && (
+						<IonItem>
+							<IonLabel position='stacked'>Classes</IonLabel>
+							<IonSelect multiple value={years} onIonChange={(e) => setYears(e.detail.value)}>
+								{range(4, getAcademicYear()).map((year, i) => (
+									<IonSelectOption key={i}>{year}</IonSelectOption>
 								))}
 							</IonSelect>
 						</IonItem>

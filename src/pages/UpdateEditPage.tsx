@@ -31,6 +31,7 @@ import { useEffectOnce } from 'react-use'
 import ImgOrVid from '../components/ImgOrVid'
 import { UpdateModel } from '../data/Update'
 import { deleteStorageFolder, firestore, storage } from '../Firebase'
+import { range, getAcademicYear } from '../util/misc'
 
 const UpdateEditPage: React.FC = () => {
 	const { uid, dept } = useParams<{ uid: string; dept: string }>()
@@ -46,6 +47,7 @@ const UpdateEditPage: React.FC = () => {
 	const [showAlert] = useIonAlert()
 	const [filters, setFilters] = useState<string[]>(['all'])
 	const [companies, setCompanies] = useState<string[]>([])
+	const [years, setYears] = useState<string[]>([])
 
 	useEffectOnce(() => {
 		if (!adding) {
@@ -70,10 +72,12 @@ const UpdateEditPage: React.FC = () => {
 				const filters = []
 				if (newUpdate.midsAndCos.includes('all') || newUpdate.midsAndCos.length === 0) filters.push('all')
 				if (newUpdate.midsAndCos.find((midOrCo) => midOrCo.length === 2)) filters.push('cos')
+				if (newUpdate.midsAndCos.find((midOrCo) => midOrCo.length === 4)) filters.push('yrs')
 				if (newUpdate.midsAndCos.find((midOrCo) => midOrCo.length == 6)) filters.push('mids')
 				setFilters(filters)
 
 				setCompanies(newUpdate.midsAndCos.filter((midOrCo) => midOrCo.length === 2))
+				setYears(newUpdate.midsAndCos.filter((midOrCo) => midOrCo.length === 4))
 				midshipmenText.current = newUpdate.midsAndCos.filter((midOrCo) => midOrCo.length === 6).join('\n')
 
 				setUpdate(newUpdate)
@@ -130,6 +134,7 @@ const UpdateEditPage: React.FC = () => {
 								const midsAndCos = []
 								if (filters.includes('mids')) midsAndCos.push(...midshipmenText.current.split(/\s*[\s,]\s*/))
 								if (filters.includes('cos')) midsAndCos.push(...companies)
+								if (filters.includes('yrs')) midsAndCos.push(...years)
 								if (filters.includes('all')) midsAndCos.push('all')
 								await setDoc(docRef, {
 									...update,
@@ -163,6 +168,7 @@ const UpdateEditPage: React.FC = () => {
 						<IonSelect multiple value={filters} onIonChange={(e) => setFilters(e.detail.value)}>
 							<IonSelectOption value='all'>All</IonSelectOption>
 							<IonSelectOption value='cos'>Specific Companies</IonSelectOption>
+							<IonSelectOption value='yrs'>Specific Classes</IonSelectOption>
 							<IonSelectOption value='mids'>Specific Midshipmen</IonSelectOption>
 						</IonSelect>
 					</IonItem>
@@ -172,6 +178,16 @@ const UpdateEditPage: React.FC = () => {
 							<IonSelect multiple value={companies} onIonChange={(e) => setCompanies(e.detail.value)}>
 								{Array.from({ length: 30 }, (x, i) => i).map((i) => (
 									<IonSelectOption key={i}>{i + 1}</IonSelectOption>
+								))}
+							</IonSelect>
+						</IonItem>
+					)}
+					{filters.includes('yrs') && (
+						<IonItem>
+							<IonLabel position='stacked'>Classes</IonLabel>
+							<IonSelect multiple value={years} onIonChange={(e) => setYears(e.detail.value)}>
+								{range(4, getAcademicYear()).map((year, i) => (
+									<IonSelectOption key={i}>{year}</IonSelectOption>
 								))}
 							</IonSelect>
 						</IonItem>

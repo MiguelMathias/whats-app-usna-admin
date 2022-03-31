@@ -70,6 +70,10 @@ if (!Date.prototype.getDateWithoutTime)
 		return new Date(this.toDateString())
 	}
 
+export const getAcademicYear = (date = new Date()) => (date.getMonth() > 5 ? date.getFullYear() + 1 : date.getFullYear())
+
+export const range = (size: number, startAt: number = 0) => [...Array(size).keys()].map((i) => i + startAt)
+
 const object_equals = (x: any, y: any): boolean => {
 	if (x === y) return true
 	// if both x and y are null or undefined and exactly the same

@@ -55,6 +55,10 @@ const ScannerModalComponent: React.FC<ScannerModalComponentProps> = ({ finishCal
 		else if (
 			tracker.midsAndCos.includes('all') ||
 			tracker.midsAndCos.includes(trackerItemScanned.email) ||
+			tracker.midsAndCos
+				.filter((midOrCo) => midOrCo.length === 4)
+				.map((midOrCo) => midOrCo.slice(-2))
+				.includes(trackerItemScanned.email.slice(1, 3)) ||
 			(trackerItemScanned.company && tracker.midsAndCos.includes(trackerItemScanned.company))
 		) {
 			/* const recordsSoFar = tracker.items.filter((item) => item.alpha === trackerItemScanned.alpha && item.company === trackerItemScanned.company).length
