@@ -36,6 +36,8 @@ import RestaurantOrdersPage from './pages/restaurants/RestaurantOrdersPage'
 import TrackerEditPage from './pages/TrackerEditPage'
 import TrackersPage from './pages/TrackersPage'
 import TrackerTrackPage from './pages/TrackerTrackPage'
+import TradeAdminOfferPage from './pages/trade/TradeAdminOfferPage'
+import TradeAdminPage from './pages/trade/TradeAdminPage'
 import UpdateEditPage from './pages/UpdateEditPage'
 import UpdatesPage from './pages/UpdatesPage'
 /* Theme variables */
@@ -102,19 +104,19 @@ const App: React.FC = () => {
 						<SideMenu restaurants={restaurants} />
 						<IonRouterOutlet id='main'>
 							<Route exact path={`/restaurants/:restaurantUid`}>
-								<RestaurantHomePage restaurants={filteredRestaurants()} />
+								{isAdmin(admins, user, 'restaurants') ? <RestaurantHomePage restaurants={filteredRestaurants()} /> : <></>}
 							</Route>
 							<Route exact path={`/restaurants/:restaurantUid/info`}>
-								<RestaurantInfoPage restaurants={filteredRestaurants()} />
+								{isAdmin(admins, user, 'restaurants') ? <RestaurantInfoPage restaurants={filteredRestaurants()} /> : <></>}
 							</Route>
 							<Route exact path={`/restaurants/:restaurantUid/menu`}>
-								<RestaurantMenuEditPage restaurants={filteredRestaurants()} />
+								{isAdmin(admins, user, 'restaurants') ? <RestaurantMenuEditPage restaurants={filteredRestaurants()} /> : <></>}
 							</Route>
 							<Route exact path={`/restaurants/:restaurantUid/menu/:restaurantItemB64`}>
-								<RestaurantMenuItemEditPage restaurants={filteredRestaurants()} />
+								{isAdmin(admins, user, 'restaurants') ? <RestaurantMenuItemEditPage restaurants={filteredRestaurants()} /> : <></>}
 							</Route>
 							<Route exact path={`/restaurants/:restaurantUid/orders`}>
-								<RestaurantOrdersPage restaurants={filteredRestaurants()} />
+								{isAdmin(admins, user, 'restaurants') ? <RestaurantOrdersPage restaurants={filteredRestaurants()} /> : <></>}
 							</Route>
 							<Route exact path='/account'>
 								<Account />
@@ -133,6 +135,12 @@ const App: React.FC = () => {
 							</Route>
 							<Route exact path='/mids'>
 								{isAdmin(admins, user, 'mids') ? <MIDSAdminPage /> : <></>}
+							</Route>
+							<Route exact path='/trade'>
+								{isAdmin(admins, user, 'trade') ? <TradeAdminPage /> : <></>}
+							</Route>
+							<Route exact path='/trade/:uid'>
+								{isAdmin(admins, user, 'trade') ? <TradeAdminOfferPage /> : <></>}
 							</Route>
 							<Route exact path='/:dept/updates'>
 								<UpdatesPage />

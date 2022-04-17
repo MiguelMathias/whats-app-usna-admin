@@ -13,8 +13,7 @@ export const updateKHMenu = database.ref('/khMenu').onWrite((snapshot) =>
 )
 
 export const subUsersToTopics = firestore.document('users/{userDoc}').onWrite(({ before, after }) => {
-	if (!before.exists) return
-	if (!after.exists) return
+	if (!before.exists || !after.exists) return
 
 	const { displayName, deviceTokens, subbedTopics } = after.data() as { displayName: string; deviceTokens?: string[]; subbedTopics?: string[] }
 
@@ -60,7 +59,7 @@ export const sendUpdateNotif = firestore.document('updates/{updateUid}').onWrite
 		body: caption,
 		imageUrl: img ? `https://firebasestorage.googleapis.com/v0/b/whats-app-usna.appspot.com/o/${img.name.split('/').join('%2F')}?alt=media` : undefined,
 	}
-	const data = { dept, uid }
+	const data = { url: `https://whats-app-usna.web.app/${dept}/updates/${uid}` }
 
 	if (midsAndCos.length > 0 || midsAndCos.includes('all')) {
 		const message = {
@@ -104,4 +103,33 @@ export const sendUpdateNotif = firestore.document('updates/{updateUid}').onWrite
 		}
 		messaging().sendMulticast({ tokens: allDeviceTokens, notification, data })
 	}
+})
+
+export const sendBidNotif = firestore.document('trade/{tradeUid}').onWrite(async ({ before, after }) => {
+	if (!before.exists || !after.exists) return
+
+	const { bestBid: oldBestBid } = before.data() as { bestBid?: { email: string; price: number } }
+	const {
+		bestBid: newBestBid,
+		posterUid,
+		title,
+		uid,
+	} = after.data() as { bestBid?: { email: string; price: number }; posterUid: string; title: string; uid: string }
+
+	if (oldBestBid?.price === newBestBid?.price) return
+
+	const { deviceTokens, subbedTopics } = (await admin.firestore().doc(`/users/${posterUid}`).get()).data() as {
+		deviceTokens?: string[]
+		subbedTopics?: string[]
+	}
+
+	if (!subbedTopics?.includes('trade')) return
+
+	const notification = {
+		title: `Bid made on: ${title}`,
+		body: `A bid was made for $${newBestBid?.price} on '${title}'`,
+	}
+	const data = { url: `https://whats-app-usna.web.app/my-offers/${uid}` }
+	messaging().sendMulticast({ tokens: deviceTokens ?? [], notification, data })
+	console.log(`Sent bid notification to: ${JSON.stringify(deviceTokens)}, ${JSON.stringify({ notification, data })}`)
 })

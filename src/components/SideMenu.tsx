@@ -1,5 +1,14 @@
 import { IonContent, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonMenu, IonMenuToggle } from '@ionic/react'
-import { addCircleOutline, cashOutline, libraryOutline, peopleOutline, personOutline, restaurantOutline, settingsOutline } from 'ionicons/icons'
+import {
+	addCircleOutline,
+	cashOutline,
+	libraryOutline,
+	peopleOutline,
+	personOutline,
+	restaurantOutline,
+	settingsOutline,
+	swapHorizontalOutline,
+} from 'ionicons/icons'
 import { useContext } from 'react'
 import { useLocation } from 'react-router'
 import { AppContext } from '../AppContext'
@@ -28,6 +37,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ restaurants }) => {
 			isAdmin(admins, user, 'mwf') && { title: 'MWF', path: '/mwf', icon: cashOutline },
 			isAdmin(admins, user, 'nabsd') && { title: 'NABSD', path: '/nabsd', icon: libraryOutline },
 			isAdmin(admins, user, 'mids') && { title: 'Mishipmen', path: '/mids', icon: peopleOutline },
+			isAdmin(admins, user, 'trade') && { title: 'Trade', path: '/trade', icon: swapHorizontalOutline },
 		] as Pages[]
 	)
 		.concat(

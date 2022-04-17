@@ -96,7 +96,7 @@ const ScannerModalComponent: React.FC<ScannerModalComponentProps> = ({ finishCal
 					</IonButtons>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent fullscreen>
+			<IonContent>
 				<div style={{ height: '100%', width: '100%' }}>
 					{tracker && (
 						<BarcodeScannerComponent

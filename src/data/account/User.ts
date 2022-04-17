@@ -9,11 +9,14 @@ export type UserDataModel = {
 	uid: string
 	email: string
 	displayName?: string
-	company?: number
-	roomNumber?: number
+	company?: string
+	roomNumber?: string
+	venmoId?: string
+	phoneNumber?: string
 	deviceTokens?: string[]
 	subbedTopics?: string[]
 	stripeId?: string
+	tradeFavorites?: string[]
 }
 
 export type AdminsModel = {
