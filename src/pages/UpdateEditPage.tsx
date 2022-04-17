@@ -153,7 +153,7 @@ const UpdateEditPage: React.FC = () => {
 					</IonButtons>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent>
+			<IonContent fullscreen>
 				<IonList>
 					<IonItem>
 						<IonLabel position='stacked'>Title</IonLabel>

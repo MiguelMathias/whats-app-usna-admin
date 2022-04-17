@@ -16,7 +16,7 @@ const LogIn: React.FC = () => (
 				<IonTitle>Log In</IonTitle>
 			</IonToolbar>
 		</IonHeader>
-		<IonContent>
+		<IonContent fullscreen>
 			<div style={{ textAlign: 'center', marginTop: 20 }}>
 				<IonIcon icon={personOutline} style={{ fontSize: 64 }} />
 			</div>

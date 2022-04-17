@@ -17,15 +17,12 @@ const UserHome: React.FC = () => {
 					<IonTitle>Account</IonTitle>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent>
+			<IonContent fullscreen>
 				<div style={{ textAlign: 'center', marginTop: 20 }}>
 					<img src={appContext.user?.photoURL ?? undefined} alt='Profile Picture' style={{ borderRadius: '50%' }} />
 				</div>
 				<div style={{ textAlign: 'center', marginTop: 20 }}>
 					<IonLabel>{appContext.user?.displayName}</IonLabel>
-				</div>
-				<div style={{ textAlign: 'center', marginTop: 20 }}>
-					<IonLabel>UID: {appContext.user?.uid}</IonLabel>
 				</div>
 				<div style={{ textAlign: 'center', marginTop: 20 }}>
 					<IonButton onClick={() => signOut(auth)}>Log Out</IonButton>

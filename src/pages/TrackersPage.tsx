@@ -49,7 +49,7 @@ const TrackersPage: React.FC = () => {
 					</IonButtons>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent>
+			<IonContent fullscreen>
 				{allCategories().length > 0 && (
 					<IonItem color='light'>
 						<IonLabel>Category</IonLabel>

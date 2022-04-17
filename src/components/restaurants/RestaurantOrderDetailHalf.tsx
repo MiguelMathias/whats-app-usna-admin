@@ -66,7 +66,7 @@ const RestaurantOrderDetailHalf: React.FC<RestaurantOrderDetailHalfProps> = ({ s
 							</IonButtons>
 						</IonToolbar>
 					</IonHeader>
-					<IonContent>
+					<IonContent fullscreen>
 						<IonList>
 							<IonItem>
 								<IonLabel>Submitted</IonLabel>

@@ -9,7 +9,7 @@ const MWFAdminPage: React.FC = () => {
 					<IonTitle>MWF</IonTitle>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent>
+			<IonContent fullscreen>
 				<IonList>
 					<IonItem button detail routerLink='/mwf/updates'>
 						Updates

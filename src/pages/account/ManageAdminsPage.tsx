@@ -54,7 +54,7 @@ const ManageAdmins: React.FC<ManageAdminsProps> = ({ restaurants }) => {
 					</IonButtons>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent>
+			<IonContent fullscreen>
 				<IonList>
 					<AccordionIonItem header='All'>
 						<IonList>

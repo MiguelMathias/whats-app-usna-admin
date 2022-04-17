@@ -96,7 +96,7 @@ const ScannerModalComponent: React.FC<ScannerModalComponentProps> = ({ finishCal
 					</IonButtons>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent>
+			<IonContent fullscreen>
 				<div style={{ height: '100%', width: '100%' }}>
 					{tracker && (
 						<BarcodeScannerComponent
@@ -136,7 +136,7 @@ const TrackerTrackPage: React.FC = () => {
 					</IonButtons>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent>
+			<IonContent fullscreen>
 				<IonItem color='light'>
 					<IonIcon slot='start' icon={searchOutline} />
 					<IonInput inputMode='numeric' type='number' enterkeyhint='search' onIonChange={(e) => setSearchText(e.detail.value ?? '')} />

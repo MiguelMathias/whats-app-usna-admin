@@ -170,7 +170,7 @@ const RestaurantMenuItemEditPage: React.FC<RestaurantMenuItemEditPageProps> = ({
 					</IonButtons>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent>
+			<IonContent fullscreen>
 				<IonList>
 					<IonItemDivider>General Info</IonItemDivider>
 					<IonItem>

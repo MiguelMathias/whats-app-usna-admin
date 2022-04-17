@@ -9,7 +9,7 @@ const MIDSAdminPage: React.FC = () => {
 					<IonTitle>Midshipmen</IonTitle>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent>
+			<IonContent fullscreen>
 				<IonList>
 					<IonItem button detail routerLink='/mids/updates'>
 						Updates

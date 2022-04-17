@@ -58,7 +58,7 @@ const RestaurantMenuEditPage: React.FC<RestaurantMenuEditPageProps> = ({ restaur
 					</IonButtons>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent>
+			<IonContent fullscreen>
 				<IonList>
 					{allCategories(restaurantBagItems)?.map((category, i) => (
 						<React.Fragment key={i}>

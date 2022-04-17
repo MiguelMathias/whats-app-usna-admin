@@ -21,7 +21,7 @@ const RestaurantHomePage: React.FC<RestaurantHomePageProps> = ({ restaurants }) 
 					<IonTitle>{capitalize(restaurant.name)}</IonTitle>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent>
+			<IonContent fullscreen>
 				<IonList>
 					<IonItem detail routerLink={`/restaurants/${restaurant.uid}/info`}>
 						Restaurant Info

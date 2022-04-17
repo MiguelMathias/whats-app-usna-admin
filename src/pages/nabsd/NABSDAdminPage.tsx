@@ -9,7 +9,7 @@ const NABSDAdminPage: React.FC = () => {
 					<IonTitle>NABSD</IonTitle>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent>
+			<IonContent fullscreen>
 				<IonList>
 					<IonItem button detail routerLink='/nabsd/updates'>
 						Updates

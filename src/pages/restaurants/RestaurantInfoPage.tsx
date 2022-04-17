@@ -159,7 +159,7 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 					</IonButtons>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent>
+			<IonContent fullscreen>
 				<IonList>
 					<IonItemDivider>General Info</IonItemDivider>
 					<IonItem>

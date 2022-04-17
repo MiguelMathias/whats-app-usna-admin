@@ -50,7 +50,7 @@ const RestaurantOrdersPage: React.FC<RestaurantOrdersPageProps> = ({ restaurants
 					<IonTitle>{restaurant.name} Orders</IonTitle>
 				</IonToolbar>
 			</IonHeader>
-			<IonContent>
+			<IonContent fullscreen>
 				<RestaurantOrdersListHalf
 					selectedOrderIndex={selectedOrderIndex}
 					setSelectedOrderIndex={setSelectedOrderIndex}

@@ -10,7 +10,7 @@ const LoadingPage: React.FC = () => (
 				<IonTitle>Loading...</IonTitle>
 			</IonToolbar>
 		</IonHeader>
-		<IonContent>
+		<IonContent fullscreen>
 			<div
 				style={{
 					height: '100%',
