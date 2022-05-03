@@ -1,4 +1,4 @@
-import { IonDatetime, IonItem, IonItemDivider, IonLabel, IonList, IonSelect, IonSelectOption } from '@ionic/react'
+import { IonDatetime, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemDivider, IonLabel, IonList, IonSelect, IonSelectOption } from '@ionic/react'
 import { addDays } from 'date-fns'
 import { RestaurantModel, RestaurantOrderModel } from '../../data/restaurants/Restaurant'
 import { formatDateDefault } from '../../util/misc'
@@ -16,6 +16,8 @@ type RestaurantOrdersListHalfProps = {
 	selectedLocationUids: string[]
 	setSelectedLocationUids: (selectedLocationUids: string[]) => void
 	restaurant: RestaurantModel
+	limit: number
+	incLimit: () => void
 }
 
 const RestaurantOrdersListHalf: React.FC<RestaurantOrdersListHalfProps> = ({
@@ -31,6 +33,8 @@ const RestaurantOrdersListHalf: React.FC<RestaurantOrdersListHalfProps> = ({
 	selectedLocationUids,
 	setSelectedLocationUids,
 	restaurant,
+	limit,
+	incLimit,
 }) => {
 	return (
 		<div className='ordersList'>
@@ -97,6 +101,9 @@ const RestaurantOrdersListHalf: React.FC<RestaurantOrdersListHalfProps> = ({
 						</IonLabel>
 					</IonItem>
 				))}
+				<IonInfiniteScroll onIonInfinite={incLimit} threshold='100px' disabled={filteredOrders.length < limit}>
+					<IonInfiniteScrollContent loadingSpinner='dots' />
+				</IonInfiniteScroll>
 			</IonList>
 		</div>
 	)

@@ -108,28 +108,53 @@ export const sendUpdateNotif = firestore.document('updates/{updateUid}').onWrite
 export const sendBidNotif = firestore.document('trade/{tradeUid}').onWrite(async ({ before, after }) => {
 	if (!before.exists || !after.exists) return
 
-	const { bestBid: oldBestBid } = before.data() as { bestBid?: { email: string; price: number } }
+	const { bestBid: oldBestBid, comments: oldComments } = before.data() as {
+		bestBid?: { email: string; price: number }
+		comments: { comment: string; posted?: Date }[]
+	}
 	const {
 		bestBid: newBestBid,
 		posterUid,
 		title,
 		uid,
-	} = after.data() as { bestBid?: { email: string; price: number }; posterUid: string; title: string; uid: string }
-
-	if (oldBestBid?.price === newBestBid?.price) return
-
-	const { deviceTokens, subbedTopics } = (await admin.firestore().doc(`/users/${posterUid}`).get()).data() as {
-		deviceTokens?: string[]
-		subbedTopics?: string[]
+		comments: newComments,
+	} = after.data() as {
+		bestBid?: { email: string; price: number }
+		posterUid: string
+		title: string
+		uid: string
+		comments: { comment: string; posted?: Date }[]
 	}
 
-	if (!subbedTopics?.includes('trade')) return
+	if (oldBestBid?.price !== newBestBid?.price) {
+		const { deviceTokens, subbedTopics } = (await admin.firestore().doc(`/users/${posterUid}`).get()).data() as {
+			deviceTokens?: string[]
+			subbedTopics?: string[]
+		}
 
-	const notification = {
-		title: `Bid made on: ${title}`,
-		body: `A bid was made for $${newBestBid?.price} on '${title}'`,
+		if (!subbedTopics?.includes('trade')) return
+
+		const notification = {
+			title: `Bid made on: ${title}`,
+			body: `A bid was made for $${newBestBid?.price} on '${title}'`,
+		}
+		const data = { url: `https://whats-app-usna.web.app/my-offers/${uid}` }
+		messaging().sendMulticast({ tokens: deviceTokens ?? [], notification, data })
+		console.log(`Sent bid notification to: ${JSON.stringify(deviceTokens)}, ${JSON.stringify({ notification, data })}`)
+	} else if (oldComments.length !== newComments.length) {
+		const { deviceTokens, subbedTopics } = (await admin.firestore().doc(`/users/${posterUid}`).get()).data() as {
+			deviceTokens?: string[]
+			subbedTopics?: string[]
+		}
+
+		if (!subbedTopics?.includes('trade')) return
+
+		const notification = {
+			title: `Comment made on your item: ${title}`,
+			body: `A comment was made on ${title}: '${newComments.sort((c1, c2) => +(c1.posted ?? 0) - +(c2.posted ?? 0)).at(-1)}'`,
+		}
+		const data = { url: `https://whats-app-usna.web.app/my-offers/${uid}` }
+		messaging().sendMulticast({ tokens: deviceTokens ?? [], notification, data })
+		console.log(`Sent bid notification to: ${JSON.stringify(deviceTokens)}, ${JSON.stringify({ notification, data })}`)
 	}
-	const data = { url: `https://whats-app-usna.web.app/my-offers/${uid}` }
-	messaging().sendMulticast({ tokens: deviceTokens ?? [], notification, data })
-	console.log(`Sent bid notification to: ${JSON.stringify(deviceTokens)}, ${JSON.stringify({ notification, data })}`)
 })

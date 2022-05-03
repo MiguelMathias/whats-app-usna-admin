@@ -16,13 +16,13 @@ type RestaurantOrdersPageProps = {
 }
 
 const RestaurantOrdersPage: React.FC<RestaurantOrdersPageProps> = ({ restaurants }) => {
-	const [restaurant, _] = useGetRestaurant(restaurants)
+	const [restaurant] = useGetRestaurant(restaurants)
 	const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['submitted'])
 	const [selectedLocationUids, setSelectedLocationUids] = useState<string[]>([])
 	const [selectedOrderIndex, setSelectedOrderIndex] = useState(-1)
 	const [fromDate, setFromDate] = useState<string>(addWeeks(new Date(), -1).toISOString())
 	const [toDate, setToDate] = useState<string>(new Date().toISOString())
-	const [orders] = useSubCollection<RestaurantOrderModel>(
+	const [orders, _, limit, incLimit] = useSubCollection<RestaurantOrderModel>(
 		query(
 			collectionGroup(firestore, 'orders'),
 			where('restaurantUid', '==', restaurant?.uid),
@@ -30,7 +30,8 @@ const RestaurantOrdersPage: React.FC<RestaurantOrdersPageProps> = ({ restaurants
 			where('submitted', '<=', Timestamp.fromDate(addDays(new Date(toDate), 1).getDateWithoutTime())),
 			orderBy('submitted', 'desc')
 		),
-		[fromDate, toDate, restaurant?.uid]
+		[fromDate, toDate, restaurant?.uid],
+		50
 	)
 
 	const filteredOrders = () =>
@@ -64,6 +65,8 @@ const RestaurantOrdersPage: React.FC<RestaurantOrdersPageProps> = ({ restaurants
 					selectedLocationUids={selectedLocationUids}
 					setSelectedLocationUids={setSelectedLocationUids}
 					restaurant={restaurant}
+					limit={limit}
+					incLimit={incLimit}
 				/>
 				<RestaurantOrderDetailHalf selectedOrderIndex={selectedOrderIndex} order={orders[selectedOrderIndex]} />
 			</IonContent>

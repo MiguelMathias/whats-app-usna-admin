@@ -6,6 +6,8 @@ import {
 	IonContent,
 	IonHeader,
 	IonIcon,
+	IonInfiniteScroll,
+	IonInfiniteScrollContent,
 	IonItem,
 	IonLabel,
 	IonList,
@@ -16,7 +18,7 @@ import {
 	IonToolbar,
 } from '@ionic/react'
 import { addOutline } from 'ionicons/icons'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { UpdateModel } from '../data/Update'
 import { firestore } from '../Firebase'
@@ -25,10 +27,18 @@ import { distinct } from '../util/misc'
 
 const UpdatesPage: React.FC = () => {
 	const { dept } = useParams<{ dept: string }>()
-	const [updates] = useSubCollection<UpdateModel>(query(collection(firestore, 'updates'), where('dept', '==', dept), orderBy('posted', 'desc')), [dept])
+	const [updates, _, limit, incLimit, setLimit] = useSubCollection<UpdateModel>(
+		query(collection(firestore, 'updates'), where('dept', '==', dept), orderBy('posted', 'desc')),
+		[dept],
+		50
+	)
 
 	const allCategories = () => updates.map((update) => update.category).filter(distinct)
 	const [categories, setCategories] = useState<string[]>([])
+
+	useEffect(() => {
+		if (categories.length > 0) setLimit(Infinity)
+	}, [categories])
 
 	return (
 		<IonPage>
@@ -71,6 +81,9 @@ const UpdatesPage: React.FC = () => {
 							</IonItem>
 						))}
 				</IonList>
+				<IonInfiniteScroll onIonInfinite={incLimit} threshold='100px' disabled={updates.length < limit}>
+					<IonInfiniteScrollContent loadingSpinner='dots' />
+				</IonInfiniteScroll>
 			</IonContent>
 		</IonPage>
 	)

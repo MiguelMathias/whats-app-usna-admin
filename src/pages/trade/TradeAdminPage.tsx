@@ -1,14 +1,36 @@
-import { IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar } from '@ionic/react'
+import {
+	IonContent,
+	IonHeader,
+	IonIcon,
+	IonInfiniteScroll,
+	IonInfiniteScrollContent,
+	IonInput,
+	IonItem,
+	IonLabel,
+	IonList,
+	IonMenuButton,
+	IonPage,
+	IonTitle,
+	IonToolbar,
+} from '@ionic/react'
 import { query, collection, orderBy, OrderByDirection, where } from 'firebase/firestore'
 import { searchOutline } from 'ionicons/icons'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { TradeOfferModel } from '../../data/trade/Trade'
 import { firestore } from '../../Firebase'
 import { useSubCollection } from '../../util/hooks'
 
 const TradeAdminPage = () => {
 	const [searchText, setSearchText] = useState('')
-	const [tradeOffers] = useSubCollection<TradeOfferModel>(query(collection(firestore, 'trade'), orderBy('posted', 'desc')))
+	const [tradeOffers, _, limit, incLimit, setLimit] = useSubCollection<TradeOfferModel>(
+		query(collection(firestore, 'trade'), orderBy('posted', 'desc')),
+		[],
+		50
+	)
+
+	useEffect(() => {
+		if (searchText.length > 0) setLimit(Infinity)
+	}, [searchText])
 
 	const shoudDisplay = (tradeOffer: TradeOfferModel) =>
 		searchText?.length
@@ -47,6 +69,9 @@ const TradeAdminPage = () => {
 						</React.Fragment>
 					))}
 				</IonList>
+				<IonInfiniteScroll onIonInfinite={incLimit} threshold='100px' disabled={tradeOffers.length < limit}>
+					<IonInfiniteScrollContent loadingSpinner='dots' />
+				</IonInfiniteScroll>
 			</IonContent>
 		</IonPage>
 	)

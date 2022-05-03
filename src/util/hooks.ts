@@ -1,4 +1,4 @@
-import { CollectionReference, DocumentData, DocumentReference, DocumentSnapshot, onSnapshot, Query, setDoc } from 'firebase/firestore'
+import { CollectionReference, DocumentData, DocumentReference, DocumentSnapshot, limit, onSnapshot, query, Query, setDoc } from 'firebase/firestore'
 import { Dispatch, SetStateAction, useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { RestaurantModel } from '../data/restaurants/Restaurant'
@@ -49,9 +49,17 @@ export const useSubDoc = <T>(
 
 export const useSubCollection = <T>(
 	collection: Query<DocumentData> | CollectionReference<DocumentData>,
-	deps: React.DependencyList = []
-): [T[], React.Dispatch<React.SetStateAction<T[]>>] => {
+	deps: React.DependencyList = [],
+	limitAmount?: number
+): [T[], React.Dispatch<React.SetStateAction<T[]>>, number, () => void, React.Dispatch<React.SetStateAction<number>>] => {
 	const [collectionData, setCollectionData] = useState<T[]>([])
-	useEffect(() => onSnapshot(collection, (snapshot) => setCollectionData(snapshot.docs.map((doc) => doc.data() as T))), deps)
-	return [collectionData, setCollectionData]
+	const [lim, setLim] = useState(limitAmount ?? 0)
+	useEffect(
+		() =>
+			onSnapshot(!!limitAmount ? query(collection, limit(lim)) : collection, (snapshot) =>
+				setCollectionData(snapshot.docs.map((doc) => doc.data() as T))
+			),
+		!!limitAmount ? [...deps, lim] : deps
+	)
+	return [collectionData, setCollectionData, lim, () => setLim((lim) => lim + (limitAmount ?? 0)), setLim]
 }

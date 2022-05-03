@@ -37,7 +37,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ restaurants }) => {
 			isAdmin(admins, user, 'mwf') && { title: 'MWF', path: '/mwf', icon: cashOutline },
 			isAdmin(admins, user, 'nabsd') && { title: 'NABSD', path: '/nabsd', icon: libraryOutline },
 			isAdmin(admins, user, 'mids') && { title: 'Mishipmen', path: '/mids', icon: peopleOutline },
-			isAdmin(admins, user, 'trade') && { title: 'Trade', path: '/trade', icon: swapHorizontalOutline },
+			isAdmin(admins, user, 'trade') && { title: 'MidBay', path: '/trade', icon: swapHorizontalOutline },
 		] as Pages[]
 	)
 		.concat(

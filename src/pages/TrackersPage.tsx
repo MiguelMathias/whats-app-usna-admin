@@ -5,6 +5,8 @@ import {
 	IonContent,
 	IonHeader,
 	IonIcon,
+	IonInfiniteScroll,
+	IonInfiniteScrollContent,
 	IonItem,
 	IonLabel,
 	IonList,
@@ -14,9 +16,9 @@ import {
 	IonTitle,
 	IonToolbar,
 } from '@ionic/react'
-import { collection, orderBy, query, where } from 'firebase/firestore'
+import { collection, limit, orderBy, query, where } from 'firebase/firestore'
 import { addOutline, checkmarkOutline, createOutline } from 'ionicons/icons'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { TrackerModel } from '../data/Tracker'
 import { firestore } from '../Firebase'
@@ -25,11 +27,19 @@ import { distinct } from '../util/misc'
 
 const TrackersPage: React.FC = () => {
 	const { dept } = useParams<{ dept: string }>()
-	const [trackers] = useSubCollection<TrackerModel>(query(collection(firestore, 'trackers'), where('dept', '==', dept), orderBy('posted', 'desc')), [dept])
+	const [trackers, _, limit, incLimit, setLimit] = useSubCollection<TrackerModel>(
+		query(collection(firestore, 'trackers'), where('dept', '==', dept), orderBy('posted', 'desc')),
+		[dept],
+		50
+	)
 	const [editMode, setEditMode] = useState(false)
 
 	const allCategories = () => trackers.map((tracker) => tracker.category).filter(distinct)
 	const [categories, setCategories] = useState<string[]>([])
+
+	useEffect(() => {
+		if (categories.length > 0) setLimit(Infinity)
+	}, [categories])
 
 	return (
 		<IonPage>
@@ -80,6 +90,9 @@ const TrackersPage: React.FC = () => {
 							</IonItem>
 						))}
 				</IonList>
+				<IonInfiniteScroll onIonInfinite={incLimit} threshold='100px' disabled={trackers.length < limit}>
+					<IonInfiniteScrollContent loadingSpinner='dots' />
+				</IonInfiniteScroll>
 			</IonContent>
 		</IonPage>
 	)
