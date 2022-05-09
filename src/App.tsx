@@ -51,7 +51,7 @@ const App: React.FC = () => {
 	const [admins, setAdmins] = useSubDoc<AdminsModel>(doc(firestore, 'admin', 'admins'), [], (snapshot) => setAdmins(snapshot.data() as AdminsModel))
 	const [showBadAccountToast, _] = useIonToast()
 
-	const filteredRestaurants = () => restaurants.filter((restaurant) => isAdmin(admins, user, restaurant.uid))
+	const filteredRestaurants = () => restaurants.filter((restaurant) => isAdmin(admins, user, 'restaurants'))
 
 	const appContextProviderValue = {
 		user,
@@ -68,6 +68,7 @@ const App: React.FC = () => {
 				if (snapshot.exists()) {
 					const newUserData = snapshot.data() as UserDataModel
 					if (!newUserData.uid) newUserData.uid = user.uid
+					if (!newUserData.email) setDoc(doc(firestore, 'users', user.uid), { ...newUserData, email: user.email ?? '' } as UserDataModel)
 					setUserData(newUserData)
 				} else
 					setDoc(doc(firestore, 'users', user.uid), {

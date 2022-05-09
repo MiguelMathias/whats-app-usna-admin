@@ -95,7 +95,6 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 								//Delete restaurant folder in firebase storage
 								await deleteStorageFolder(storage, `restaurants/${restaurant.uid}`)
 								console.log(`Successfully deleted all associated ${restaurant.name} data.`)
-								//router.push('/account', 'root')
 								window.location.assign('/')
 							}
 							hideDeletePopover()
@@ -142,14 +141,14 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 								} else {
 									const newDoc = doc(collection(firestore, 'restaurants'))
 									await setDoc(newDoc, { ...restaurant, uid: newDoc.id } as RestaurantModel)
-									if (user)
+									/* if (user)
 										await setDoc(doc(firestore, 'admin', 'admins'), {
 											...admins,
 											depts: {
 												...admins.depts,
-												[restaurant.name]: [user.email],
+												['restaurants']: [user.email],
 											},
-										} as AdminsModel)
+										} as AdminsModel) */
 									router.push(`/restaurants/${newDoc.id}`, 'back')
 								}
 							}}

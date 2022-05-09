@@ -42,7 +42,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ restaurants }) => {
 	)
 		.concat(
 			...restaurants
-				.filter((restaurant) => isAdmin(admins, user, restaurant.uid))
+				.filter(() => isAdmin(admins, user, 'restaurants'))
 				.map((restaurant) => ({ title: restaurant.name, path: `/restaurants/${restaurant.uid}` } as Pages))
 		)
 		.concat(isAdmin(admins, user, 'all') ? { title: 'Add Restaurant', path: '/restaurants/add/info', icon: addCircleOutline } : [])
