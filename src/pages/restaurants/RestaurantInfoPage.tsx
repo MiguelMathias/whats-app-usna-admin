@@ -124,13 +124,9 @@ const RestaurantInfoPage: React.FC<RestaurantInfoPageProps> = ({ restaurants }) 
 		<IonPage>
 			<IonHeader>
 				<IonToolbar>
-					{restaurant.uid ? (
-						<IonButtons slot='start'>
-							<IonBackButton defaultHref={`/restaurants/${restaurant.uid}`} />
-						</IonButtons>
-					) : (
-						<IonMenuButton slot='start' />
-					)}
+					<IonButtons slot='start'>
+						<IonBackButton defaultHref={`/restaurants/${restaurant.uid}`} />
+					</IonButtons>
 					<IonTitle>{capitalize(restaurant.name)} Info</IonTitle>
 					<IonButtons slot='end'>
 						<IonButton
